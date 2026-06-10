@@ -64,7 +64,7 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
   paramsSummary.textContent = '查看参数';
 
   const paramsContent = document.createElement('pre');
-  paramsContent.style.cssText = 'font-size:var(--font-size-xs);background:var(--color-bg-hover);padding:8px;border-radius:4px;overflow-x:auto;margin-top:4px;';
+  paramsContent.style.cssText = 'font-size:var(--font-size-xs);background:var(--color-bg-hover);color:var(--color-text-primary);padding:8px;border-radius:4px;overflow-x:auto;margin-top:4px;';
   try {
     const args = JSON.parse(toolCall.function.arguments);
     paramsContent.textContent = JSON.stringify(args, null, 2);
@@ -96,6 +96,12 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
     fullscreenBtn.style.display = '';
     fullscreenBtn.addEventListener('click', (e) => {
       e.stopPropagation(); // 不触发 header 折叠
+      toggleFullscreen(card);
+    });
+    // ★ 双击卡片进入全屏
+    card.addEventListener('dblclick', (e) => {
+      // 不拦截 details/参数区的双击
+      if (e.target.closest('details')) return;
       toggleFullscreen(card);
     });
     renderMathResult(body, componentName, toolResult.props);
@@ -274,7 +280,7 @@ function enterFullscreen(card) {
   const originalParent = card.parentElement;
   const placeholder = document.createElement('div');
   placeholder.className = 'fullscreen-placeholder';
-  placeholder.style.cssText = `height:${firstRect.height}px;transition:height 0.38s cubic-bezier(0.22,0.61,0.36,1);`;
+  placeholder.style.cssText = `height:${firstRect.height}px;width:${firstRect.width}px;transition:height 0.38s cubic-bezier(0.22,0.61,0.36,1);`;
   originalParent.insertBefore(placeholder, card);
 
   // 保存原始样式以便恢复
@@ -334,16 +340,16 @@ function enterFullscreen(card) {
   document.body.style.overflow = 'hidden';
 
   // ── FLIP: Play ──
-  // 强制重排后启用过渡并播放到目标位置
+  // 强制重排后启用过渡并播放到真正的全屏 (100vw × 100vh, 无边距)
   card.offsetHeight; // force reflow
   card.style.transition = 'all 0.38s cubic-bezier(0.22, 0.61, 0.36, 1)';
   card.classList.add('fullscreen');
 
   requestAnimationFrame(() => {
-    card.style.top = '2.5vh';
-    card.style.left = '2.5vw';
-    card.style.width = '95vw';
-    card.style.height = '95vh';
+    card.style.top = '0';
+    card.style.left = '0';
+    card.style.width = '100vw';
+    card.style.height = '100vh';
     backdrop.classList.add('active');
   });
 
@@ -353,77 +359,106 @@ function enterFullscreen(card) {
 }
 
 /**
- * 退出全屏
+ * 退出全屏 —— 原路缩小回原位
  * @param {HTMLElement} card
  */
 function exitFullscreen(card) {
   if (!card.classList.contains('fullscreen')) return;
-  _activeFullscreen = null;
 
   const backdrop = card._fsBackdrop;
   const closeBtn = card._fsCloseBtn;
   const restore = card._fsRestore;
   const placeholder = restore?.placeholder;
 
-  // 移除 backdrop 和关闭按钮
-  if (backdrop) backdrop.classList.remove('active');
-  if (closeBtn) closeBtn.remove();
-
-  // 恢复 body 滚动
-  document.body.style.overflow = '';
-
-  // 移除 ESC 监听
-  if (card._fsEscHandler) {
-    document.removeEventListener('keydown', card._fsEscHandler);
-  }
-
-  // ── 判断原始位置是否仍然有效 ──
+  // 判断原始位置是否仍然有效
   const canRestore = restore?.parent &&
     restore.parent.isConnected &&
     placeholder &&
     placeholder.isConnected;
 
+  // 提前拿到目标矩形（在移除 backdrop 之前，避免 reflow 干扰）
+  let targetRect;
   if (canRestore) {
-    // ★ 正常路径：动画缩小回原位
-    const targetRect = placeholder.getBoundingClientRect();
-    card.style.top = targetRect.top + 'px';
-    card.style.left = targetRect.left + 'px';
-    card.style.width = (targetRect.width || 0) + 'px';
-    card.style.height = (targetRect.height || 0) + 'px';
-    card.classList.remove('fullscreen');
-
-    setTimeout(() => {
-      restoreCardStyle(card, restore);
-      restore.parent.insertBefore(card, placeholder);
-      placeholder.remove();
-      cleanupFullscreen(card, backdrop);
-      resizePlotlyInElement(card);
-    }, 400);
+    targetRect = placeholder.getBoundingClientRect();
   } else {
-    // ★ 退化路径：原位已丢失（消息被重建等）→ 缩小消失
-    card.style.transform = 'scale(0.95)';
-    card.style.opacity = '0';
-    card.classList.remove('fullscreen');
-
-    setTimeout(() => {
-      card.remove();
-      if (placeholder && placeholder.isConnected) placeholder.remove();
-      cleanupFullscreen(card, backdrop);
-    }, 400);
+    // 退化：缩小到视口中心消失
+    targetRect = {
+      top: window.innerHeight * 0.4,
+      left: window.innerWidth * 0.35,
+      width: window.innerWidth * 0.3,
+      height: 0,
+    };
   }
+
+  // 移除 UI 层
+  if (backdrop) backdrop.classList.remove('active');
+  if (closeBtn) closeBtn.remove();
+  document.body.style.overflow = '';
+
+  if (card._fsEscHandler) {
+    document.removeEventListener('keydown', card._fsEscHandler);
+  }
+
+  // ★ 确保过渡启用，原路缩小回 targetRect
+  card.style.transition = 'all 0.38s cubic-bezier(0.22, 0.61, 0.36, 1)';
+  card.style.top = targetRect.top + 'px';
+  card.style.left = targetRect.left + 'px';
+  card.style.width = Math.max(targetRect.width, 0) + 'px';
+  card.style.height = Math.max(targetRect.height, 0) + 'px';
+  card.classList.remove('fullscreen');
+
+  // ── 动画结束后恢复 DOM / 清理 ──
+  const onTransitionEnd = (e) => {
+    if (e.target !== card) return; // 忽略子元素冒泡
+    card.removeEventListener('transitionend', onTransitionEnd);
+    finishExit(card, restore, canRestore, backdrop, placeholder, closeBtn);
+  };
+  card.addEventListener('transitionend', onTransitionEnd);
+
+  // 兜底：600ms 后强制清理（transitionend 可能不触发）
+  setTimeout(() => {
+    card.removeEventListener('transitionend', onTransitionEnd);
+    finishExit(card, restore, canRestore, backdrop, placeholder, closeBtn);
+  }, 600);
+}
+
+/**
+ * 退出动画完成后的 DOM 归位 & 清理
+ */
+function finishExit(card, restore, canRestore, backdrop, placeholder, closeBtn) {
+  if (canRestore && restore.parent.isConnected && placeholder && placeholder.isConnected) {
+    // 正常路径：卡片归位
+    restoreCardStyle(card, restore);
+    restore.parent.insertBefore(card, placeholder);
+    placeholder.remove();
+  } else if (!canRestore) {
+    // 退化路径：卡片消失
+    card.style.opacity = '0';
+    card.style.transition = 'opacity 0.15s ease';
+    setTimeout(() => {
+      if (card.isConnected) card.remove();
+    }, 160);
+  }
+
+  if (placeholder && placeholder.isConnected) placeholder.remove();
+  cleanupFullscreen(card, backdrop);
+  resizePlotlyInElement(card);
+
+  _activeFullscreen = null;
 }
 
 /**
  * 恢复卡片内联样式
  */
 function restoreCardStyle(card, restore) {
-  card.style.position = restore?.position || '';
-  card.style.top = restore?.top || '';
-  card.style.left = restore?.left || '';
-  card.style.width = restore?.width || '';
-  card.style.height = restore?.height || '';
-  card.style.margin = restore?.margin || '';
-  card.style.zIndex = restore?.zIndex || '';
+  if (!restore) return;
+  card.style.position = restore.position || '';
+  card.style.top = restore.top || '';
+  card.style.left = restore.left || '';
+  card.style.width = restore.width || '';
+  card.style.height = restore.height || '';
+  card.style.margin = restore.margin || '';
+  card.style.zIndex = restore.zIndex || '';
   card.style.transition = '';
   card.style.transform = '';
   card.style.opacity = '';

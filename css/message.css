@@ -161,10 +161,11 @@
   position: fixed !important;
   z-index: 9999 !important;
   margin: 0 !important;
-  border-radius: 12px !important;
+  max-width: none !important;
+  border-radius: 0 !important;
   overflow-y: auto !important;
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.45) !important;
-  /* 尺寸通过 JS 内联设置 */
+  box-shadow: none !important;
+  /* 尺寸通过 JS 内联设置（100vw × 100vh） */
 }
 
 .tool-call-card.fullscreen .tool-call-body {
@@ -177,7 +178,7 @@
 
 /* 全屏时图表容器填满可用空间 */
 .tool-call-card.fullscreen .plotly-container {
-  min-height: 72vh;
+  min-height: 86vh;
 }
 
 /* 全屏关闭按钮 */
@@ -189,7 +190,8 @@
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.15);
+  /* 亮色主题：深色半透明，区分于白色卡片 */
+  background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(8px);
   color: #fff;
   font-size: 20px;
@@ -201,8 +203,15 @@
   transition: background 0.2s ease, transform 0.2s ease;
 }
 .fullscreen-close-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.6);
   transform: scale(1.08);
+}
+/* 暗色主题：白色半透明 */
+[data-theme="dark"] .fullscreen-close-btn {
+  background: rgba(255, 255, 255, 0.15);
+}
+[data-theme="dark"] .fullscreen-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* 全屏按钮（卡片 header 内） */
