@@ -1,0 +1,201 @@
+/* ===== 数学组件通用样式 ===== */
+.math-component {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.math-component-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-hover);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.math-component-body {
+  padding: var(--spacing-md);
+}
+
+/* LaTeX 渲染区域 */
+.latex-container {
+  padding: var(--spacing-md);
+  overflow-x: auto;
+}
+
+.latex-step {
+  margin: var(--spacing-sm) 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-accent-light);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.latex-step-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+/* Plotly 图表容器 */
+.plotly-container {
+  width: 100%;
+  min-height: 420px;
+}
+
+/* Canvas 动画容器 */
+.canvas-container {
+  width: 100%;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-sm);
+}
+
+.canvas-container canvas {
+  max-width: 100%;
+}
+
+/* 动画控制条 */
+.animation-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) 0;
+}
+
+.animation-controls button {
+  padding: var(--spacing-xs) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+}
+.animation-controls button:hover {
+  background: var(--color-bg-hover);
+}
+
+.animation-controls input[type="range"] {
+  flex: 1;
+  accent-color: var(--color-accent);
+}
+
+/* 解题步骤卡片 */
+.step-list {
+  list-style: none;
+  counter-reset: step-counter;
+}
+
+.step-item {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) 0;
+  border-bottom: 1px solid var(--color-divider);
+  position: relative;
+}
+.step-item:last-child { border-bottom: none; }
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+}
+.step-item.correct .step-number { background: var(--color-success-bg); color: var(--color-success); }
+.step-item.error .step-number { background: var(--color-error-bg); color: var(--color-error); }
+.step-item.highlight .step-number { background: var(--color-info-bg); color: var(--color-info); }
+
+.step-content { flex: 1; }
+.step-annotation {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* 知识点提示框 */
+.knowledge-tip {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border-left: 4px solid;
+}
+
+.knowledge-tip.definition {
+  background: var(--color-info-bg);
+  border-color: var(--color-info);
+}
+.knowledge-tip.theorem {
+  background: var(--color-success-bg);
+  border-color: var(--color-success);
+}
+.knowledge-tip.formula {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning);
+}
+.knowledge-tip.note {
+  background: var(--color-bg-hover);
+  border-color: var(--color-text-secondary);
+}
+
+.knowledge-tip-title {
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+  font-size: var(--font-size-md);
+}
+
+.knowledge-tip-content {
+  line-height: 1.6;
+}
+
+.knowledge-tip-conditions {
+  margin-top: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+  color: var(--color-text-secondary);
+}
+
+/* 参数滑块 */
+.parameter-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-divider);
+}
+
+.param-control {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.param-control label {
+  min-width: 60px;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.param-control input[type="range"] {
+  flex: 1;
+}
+
+.param-control .param-value {
+  min-width: 40px;
+  text-align: right;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-mono);
+}

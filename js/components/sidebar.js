@@ -1,0 +1,107 @@
+/**
+ * 侧边栏组件 —— 会话管理
+ */
+import { truncateText, formatDate } from '../utils/formatters.js';
+
+/**
+ * 初始化侧边栏
+ * @param {Object} chatStore - ChatStore 单例
+ */
+export function initSidebar(chatStore) {
+  const newChatBtn = document.getElementById('new-chat-btn');
+  const sessionList = document.getElementById('session-list');
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const sidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+  // 新建对话
+  newChatBtn.addEventListener('click', () => {
+    chatStore.createSession();
+    // 移动端自动关闭侧边栏
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('active');
+    // 自动聚焦输入框
+    document.getElementById('message-input')?.focus();
+  });
+
+  // 移动端侧边栏切换
+  sidebarToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    sidebarOverlay.classList.toggle('active');
+  });
+
+  sidebarOverlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('active');
+  });
+
+  // 监听 store 变化 → 重新渲染会话列表
+  chatStore.subscribe('sessions', () => renderSessionList());
+  chatStore.subscribe('activeSessionId', () => renderSessionList());
+
+  // 首次渲染
+  renderSessionList();
+
+  /**
+   * 渲染会话列表
+   */
+  function renderSessionList() {
+    const { sessions, activeSessionId } = chatStore.getState();
+
+    if (!sessions || sessions.length === 0) {
+      sessionList.innerHTML = '<div class="session-empty">暂无对话<br/>点击上方按钮开始</div>';
+      return;
+    }
+
+    // 按 updatedAt 倒序排列
+    const sorted = [...sessions].sort(
+      (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+    );
+
+    sessionList.innerHTML = '';
+    for (const session of sorted) {
+      const item = document.createElement('div');
+      item.className = `session-item${session.id === activeSessionId ? ' active' : ''}`;
+      item.dataset.id = session.id;
+
+      const title = document.createElement('span');
+      title.className = 'session-item-title';
+      title.textContent = truncateText(session.title, 28);
+      title.title = session.title;
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'session-item-delete';
+      deleteBtn.innerHTML = '✕';
+      deleteBtn.title = '删除对话';
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (confirm(`确定删除「${session.title}」？`)) {
+          chatStore.deleteSession(session.id);
+        }
+      });
+
+      item.appendChild(title);
+      item.appendChild(deleteBtn);
+
+      // 点击切换会话
+      item.addEventListener('click', () => {
+        chatStore.switchSession(session.id);
+        // 移动端自动关闭侧边栏
+        sidebar.classList.remove('open');
+        sidebarOverlay.classList.remove('active');
+        // 自动聚焦输入框
+        document.getElementById('message-input')?.focus();
+      });
+
+      // 双击重命名
+      item.addEventListener('dblclick', () => {
+        const newTitle = prompt('重命名对话', session.title);
+        if (newTitle && newTitle.trim()) {
+          chatStore.renameSession(session.id, newTitle.trim());
+        }
+      });
+
+      sessionList.appendChild(item);
+    }
+  }
+}

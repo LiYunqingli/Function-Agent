@@ -1,0 +1,233 @@
+.message-wrapper {
+  margin-bottom: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.message-wrapper.user { align-items: flex-end; }
+.message-wrapper.assistant { align-items: flex-start; }
+.message-wrapper.tool { align-items: flex-start; }
+
+.message-bubble {
+  max-width: 75%;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  line-height: 1.7;
+  word-break: break-word;
+  position: relative;
+}
+
+.message-wrapper.user .message-bubble {
+  background: var(--color-bg-bubble-user);
+  color: var(--color-text-bubble-user);
+  border-bottom-right-radius: var(--radius-xs);
+}
+
+.message-wrapper.assistant .message-bubble {
+  background: var(--color-bg-bubble-ai);
+  color: var(--color-text-bubble-ai);
+  border-bottom-left-radius: var(--radius-xs);
+}
+
+/* AI消息中的段落 */
+.message-bubble p { margin-bottom: var(--spacing-sm); }
+.message-bubble p:last-child { margin-bottom: 0; }
+
+/* AI消息中的列表 */
+.message-bubble ul, .message-bubble ol {
+  padding-left: var(--spacing-lg);
+  margin-bottom: var(--spacing-sm);
+}
+
+/* 行内代码 */
+.message-bubble code:not(pre code) {
+  background: var(--color-bg-hover);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: var(--font-mono);
+}
+
+/* 复制按钮 */
+.message-actions {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+.message-wrapper:hover .message-actions { opacity: 1; }
+
+.copy-btn {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+.copy-btn:hover { background: var(--color-bg-hover); }
+
+/* 工具调用卡片 */
+.tool-call-card {
+  margin-top: var(--spacing-sm);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  /* 覆盖父级 .message-wrapper.assistant 的 align-items:flex-start，
+     让图表卡片撑满消息区域全宽 */
+  align-self: stretch;
+  /* 焦点过渡 */
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ★ 媒体查询：随视口变宽逐步收窄卡片，避免图表过大 */
+@media (min-width: 640px) {
+  .tool-call-card { max-width: 88%; }
+}
+@media (min-width: 1024px) {
+  .tool-call-card { max-width: 76%; }
+}
+@media (min-width: 1440px) {
+  .tool-call-card { max-width: 62%; }
+}
+
+/* ★ 聚焦态：点击卡片后边框高亮，表示图表交互已激活 */
+.tool-call-card.focused {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+/* 聚焦态时 header 也反映状态 */
+.tool-call-card.focused .tool-call-header {
+  background: color-mix(in srgb, var(--color-accent) 8%, var(--color-bg-hover));
+}
+
+.tool-call-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: var(--color-bg-hover);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.tool-call-header .tool-icon { font-size: var(--font-size-md); }
+
+.tool-call-body {
+  padding: var(--spacing-md);
+}
+
+.tool-call-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+.tool-call-status.pending { background: var(--color-warning-bg); color: var(--color-warning); }
+.tool-call-status.executing { background: var(--color-info-bg); color: var(--color-info); }
+.tool-call-status.success { background: var(--color-success-bg); color: var(--color-success); }
+.tool-call-status.error { background: var(--color-error-bg); color: var(--color-error); }
+
+/* 消息时间戳 */
+.message-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+/* ===== 全屏 ===== */
+.fullscreen-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 9998;
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+.fullscreen-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tool-call-card.fullscreen {
+  position: fixed !important;
+  z-index: 9999 !important;
+  margin: 0 !important;
+  border-radius: 12px !important;
+  overflow-y: auto !important;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.45) !important;
+  /* 尺寸通过 JS 内联设置 */
+}
+
+.tool-call-card.fullscreen .tool-call-body {
+  padding: var(--spacing-lg);
+}
+
+.tool-call-card.fullscreen .tool-call-header {
+  cursor: default;
+}
+
+/* 全屏时图表容器填满可用空间 */
+.tool-call-card.fullscreen .plotly-container {
+  min-height: 72vh;
+}
+
+/* 全屏关闭按钮 */
+.fullscreen-close-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.fullscreen-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.08);
+}
+
+/* 全屏按钮（卡片 header 内） */
+.tool-call-fullscreen-btn {
+  margin-left: auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.tool-call-fullscreen-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-accent);
+}
+/* 隐藏在全屏卡片上 */
+.tool-call-card.fullscreen .tool-call-fullscreen-btn {
+  display: none;
+}

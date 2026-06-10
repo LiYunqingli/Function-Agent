@@ -1,0 +1,80 @@
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.dialog {
+  background: var(--color-bg-dialog);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  width: 90%;
+  max-width: 520px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dialog-header h2 {
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+
+.dialog-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-lg);
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.setting-section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.setting-section h3 {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--spacing-md);
+}
+
+.setting-field {
+  margin-bottom: var(--spacing-md);
+}
+
+.setting-field label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-secondary);
+}
+
+.setting-field input[type="range"] {
+  width: 100%;
+  accent-color: var(--color-accent);
+}
+
+.setting-field textarea {
+  min-height: 100px;
+}

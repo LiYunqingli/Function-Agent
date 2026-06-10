@@ -1,0 +1,125 @@
+/* ===== 主题变量 ===== */
+:root {
+  /* 亮色主题 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f5f7fa;
+  --color-bg-sidebar: #f0f2f5;
+  --color-bg-hover: #e8eaed;
+  --color-bg-active: #d3e3fd;
+  --color-bg-input: #ffffff;
+  --color-bg-bubble-user: #1976d2;
+  --color-bg-bubble-ai: #f0f2f5;
+  --color-bg-dialog: #ffffff;
+  --color-bg-card: #ffffff;
+  --color-bg-tooltip: #333333;
+  
+  --color-text-primary: #1a1a2e;
+  --color-text-secondary: #5f6368;
+  --color-text-on-primary: #ffffff;
+  --color-text-bubble-user: #ffffff;
+  --color-text-bubble-ai: #1a1a2e;
+  --color-text-placeholder: #9aa0a6;
+  --color-text-link: #1976d2;
+  
+  --color-border: #e0e0e0;
+  --color-border-light: #f0f0f0;
+  --color-divider: #e8eaed;
+  
+  --color-accent: #1976d2;
+  --color-accent-hover: #1565c0;
+  --color-accent-light: #e3f2fd;
+  --color-success: #2e7d32;
+  --color-success-bg: #e8f5e9;
+  --color-error: #c62828;
+  --color-error-bg: #ffebee;
+  --color-warning: #ed6c02;
+  --color-warning-bg: #fff3e0;
+  --color-info: #0288d1;
+  --color-info-bg: #e1f5fe;
+  
+  /* 间距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  
+  /* 字体 */
+  --font-sans: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.16);
+  
+  /* 布局 */
+  --sidebar-width: 280px;
+  --topbar-height: 56px;
+  --input-bar-height: 72px;
+  
+  /* 过渡 */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow: 400ms ease;
+}
+
+/* 暗色主题 */
+[data-theme="dark"] {
+  --color-bg-primary: #1a1a2e;
+  --color-bg-secondary: #16213e;
+  --color-bg-sidebar: #0f1626;
+  --color-bg-hover: #1e2a45;
+  --color-bg-active: #1e3a5f;
+  --color-bg-input: #1e2a45;
+  --color-bg-bubble-user: #1565c0;
+  --color-bg-bubble-ai: #1e2a45;
+  --color-bg-dialog: #1e2a45;
+  --color-bg-card: #1e2a45;
+  --color-bg-tooltip: #e0e0e0;
+  
+  --color-text-primary: #e8eaed;
+  --color-text-secondary: #9aa0a6;
+  --color-text-on-primary: #ffffff;
+  --color-text-bubble-user: #ffffff;
+  --color-text-bubble-ai: #e8eaed;
+  --color-text-placeholder: #5f6368;
+  --color-text-link: #90caf9;
+  
+  --color-border: #2a3a5c;
+  --color-border-light: #1e2a45;
+  --color-divider: #2a3a5c;
+  
+  --color-accent: #90caf9;
+  --color-accent-hover: #64b5f6;
+  --color-accent-light: #1e3a5f;
+  --color-success: #66bb6a;
+  --color-success-bg: #1b5e20;
+  --color-error: #ef5350;
+  --color-error-bg: #b71c1c;
+  --color-warning: #ffa726;
+  --color-warning-bg: #e65100;
+  --color-info: #4fc3f7;
+  --color-info-bg: #01579b;
+  
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.6);
+}
