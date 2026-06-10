@@ -9,7 +9,7 @@ export const STORAGE_KEYS = {
   THEME: 'gaoshu_theme',
 };
 
-export const MAX_TOOL_DEPTH = 5;
+export const MAX_TOOL_DEPTH = 25;
 export const MAX_SESSIONS = 100;
 export const MAX_MESSAGES_PER_SESSION = 500;
 export const LOCALSTORAGE_QUOTA = 5 * 1024 * 1024; // 5MB
