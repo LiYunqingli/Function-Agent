@@ -69,7 +69,14 @@
       <span>AI 正在思考...</span>
     </div>
     <div class="input-bar">
-      <textarea id="message-input" placeholder="输入高数问题，如：求 lim(x→0) sin(x)/x ..." rows="1"></textarea>
+      <button id="image-upload-btn" class="icon-btn image-upload-btn" title="上传图片">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </button>
+      <input type="file" id="image-file-input" accept="image/*" multiple style="display:none;" />
+      <div class="input-main">
+        <div id="image-preview-bar" class="image-preview-bar" style="display:none;"></div>
+        <textarea id="message-input" placeholder="输入高数问题，如：求 lim(x→0) sin(x)/x ..." rows="1"></textarea>
+      </div>
       <button id="send-btn" class="icon-btn send-btn" title="发送">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
       </button>
@@ -87,8 +94,9 @@
         <button id="settings-close" class="icon-btn">✕</button>
       </div>
       <div class="dialog-body">
+        <!-- ── 大语言模型连接信息 ── -->
         <div class="setting-section">
-          <h3>模型配置</h3>
+          <h3>🔗 大语言模型连接信息</h3>
           <div class="setting-field">
             <label for="api-url">API URL</label>
             <input type="text" id="api-url" placeholder="https://api.openai.com/v1" />
@@ -98,12 +106,33 @@
             <input type="password" id="api-key" placeholder="sk-..." />
           </div>
           <div class="setting-field">
-            <label for="model-name">模型</label>
+            <label for="model-name">模型名称</label>
             <input type="text" id="model-name" placeholder="gpt-4o" />
           </div>
         </div>
+        <!-- ── 图片识别模型(多模态大模型)连接信息 ── -->
         <div class="setting-section">
-          <h3>生成参数</h3>
+          <h3>🖼️ 图片识别模型（多模态大模型）连接信息</h3>
+          <div class="setting-field">
+            <label for="vision-api-url">API URL</label>
+            <input type="text" id="vision-api-url" placeholder="https://api.openai.com/v1" />
+          </div>
+          <div class="setting-field">
+            <label for="vision-api-key">API Key</label>
+            <input type="password" id="vision-api-key" placeholder="sk-..." />
+          </div>
+          <div class="setting-field">
+            <label for="vision-model-name">模型名称</label>
+            <input type="text" id="vision-model-name" placeholder="gpt-4o" />
+          </div>
+          <div class="setting-field">
+            <label for="vision-system-prompt">图片识别提示词</label>
+            <textarea id="vision-system-prompt" rows="3" placeholder="让多模态模型看图片内容，返回图片描述..."></textarea>
+          </div>
+        </div>
+        <!-- ── 生成参数 ── -->
+        <div class="setting-section">
+          <h3>⚙️ 生成参数</h3>
           <div class="setting-field">
             <label for="temperature">Temperature: <span id="temp-val">0.7</span></label>
             <input type="range" id="temperature" min="0" max="2" step="0.1" value="0.7" />
@@ -113,8 +142,9 @@
             <input type="number" id="max-tokens" value="4096" min="256" max="32768" />
           </div>
         </div>
+        <!-- ── System Prompt ── -->
         <div class="setting-section">
-          <h3>System Prompt</h3>
+          <h3>💬 大语言模型 System Prompt</h3>
           <textarea id="system-prompt" rows="5" placeholder="系统提示词..."></textarea>
         </div>
       </div>

@@ -27,7 +27,40 @@ export function createMessageBubble(message, toolStore, chatStore) {
     // 用户消息
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
-    bubble.textContent = message.content;
+
+    // ★ 显示图片缩略图
+    if (message.images && message.images.length > 0) {
+      const imageGrid = document.createElement('div');
+      imageGrid.className = 'user-message-images';
+      message.images.forEach((src) => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.className = 'user-message-image';
+        img.loading = 'lazy';
+        img.addEventListener('click', () => {
+          // 点击查看大图
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:10001;display:flex;align-items:center;justify-content:center;cursor:pointer;';
+          const fullImg = document.createElement('img');
+          fullImg.src = src;
+          fullImg.style.cssText = 'max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;';
+          overlay.appendChild(fullImg);
+          overlay.addEventListener('click', () => overlay.remove());
+          document.body.appendChild(overlay);
+        });
+        imageGrid.appendChild(img);
+      });
+      bubble.appendChild(imageGrid);
+    }
+
+    // 文字内容
+    if (message.content) {
+      const textEl = document.createElement('div');
+      textEl.className = 'user-message-text';
+      textEl.textContent = message.content;
+      bubble.appendChild(textEl);
+    }
+
     wrapper.appendChild(bubble);
   } else if (message.role === 'assistant') {
     // ★ 判断是否有文本内容（非空且非纯空白）

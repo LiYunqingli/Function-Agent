@@ -53,6 +53,10 @@ export function initSettingsDialog(settingsStore) {
       apiUrl: document.getElementById('api-url').value.trim(),
       apiKey: document.getElementById('api-key').value.trim(),
       model: document.getElementById('model-name').value.trim(),
+      visionApiUrl: document.getElementById('vision-api-url').value.trim(),
+      visionApiKey: document.getElementById('vision-api-key').value.trim(),
+      visionModel: document.getElementById('vision-model-name').value.trim(),
+      visionSystemPrompt: document.getElementById('vision-system-prompt').value,
       temperature: parseFloat(tempSlider.value),
       maxTokens: parseInt(document.getElementById('max-tokens').value, 10) || 4096,
       systemPrompt: document.getElementById('system-prompt').value,
@@ -70,6 +74,10 @@ function loadFormFromStore() {
   document.getElementById('api-url').value = state.apiUrl || '';
   document.getElementById('api-key').value = state.apiKey || '';
   document.getElementById('model-name').value = state.model || '';
+  document.getElementById('vision-api-url').value = state.visionApiUrl || '';
+  document.getElementById('vision-api-key').value = state.visionApiKey || '';
+  document.getElementById('vision-model-name').value = state.visionModel || '';
+  document.getElementById('vision-system-prompt').value = state.visionSystemPrompt || '';
   document.getElementById('temperature').value = state.temperature || 0.7;
   document.getElementById('temp-val').textContent = state.temperature || 0.7;
   document.getElementById('max-tokens').value = state.maxTokens || 4096;

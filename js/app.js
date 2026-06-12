@@ -48,8 +48,8 @@ window._gaoshuApplyTheme = applyTheme;
 initSidebar(chatStore);
 initTopBar(settingsStore);
 initMessageList(chatStore, toolStore);
-initChatArea(chatStore, settingsStore, toolStore);
-initInputBar();
+const inputBarApi = initInputBar();
+initChatArea(chatStore, settingsStore, toolStore, inputBarApi);
 initSettingsDialog(settingsStore);
 
 // ===== 欢迎页面逻辑 =====

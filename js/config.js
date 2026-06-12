@@ -15,12 +15,19 @@ export const MAX_MESSAGES_PER_SESSION = 500;
 export const LOCALSTORAGE_QUOTA = 5 * 1024 * 1024; // 5MB
 
 export const DEFAULT_SETTINGS = {
+  // ── 大语言模型 ──
   apiUrl: 'https://api.openai.com/v1',
   apiKey: '',
   model: 'gpt-4o',
   temperature: 0.7,
   maxTokens: 4096,
   systemPrompt: '你是一位专业的高等数学助教，擅长微积分、线性代数、概率统计。解题时请分步骤说明，并在适当时候调用可视化工具辅助解释。当你需要绘制函数图像、展示极限过程、演示积分区域、展示3D曲面等场景时，请调用对应的可视化工具。工具名称和用途：render_latex(渲染LaTeX公式)、plot_function(绘制函数图像)、animate_limit(极限逼近动画)、animate_taylor_series(泰勒展开动画)、show_differential(微分近似图)、plot_integral_area(积分面积)、plot_gradient_field(梯度场)、plot_surface_3d(3D曲面)、animate_solid_of_revolution(旋转体)、show_step_card(解题步骤卡片)、show_knowledge_tip(知识点提示)、control_parameter_slider(参数滑块联动)。',
+  // ── 多模态大模型（图片识别） ──
+  visionApiUrl: 'https://api.openai.com/v1',
+  visionApiKey: '',
+  visionModel: 'gpt-4o',
+  visionSystemPrompt: '你是一个数学题目图片识别助手。请仔细观察图片中的数学题目内容，尽可能完整、准确地描述题目中的文字、公式、图形等信息。如果图片中包含数学公式，请用 LaTeX 格式表示。请直接返回题目描述，不要添加额外解释。',
+  // ── 通用 ──
   theme: 'system',
 };
 

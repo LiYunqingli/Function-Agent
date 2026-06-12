@@ -8,6 +8,31 @@
 .message-wrapper.assistant { align-items: flex-start; }
 .message-wrapper.tool { align-items: flex-start; }
 
+/* 用户消息中的图片展示 */
+.user-message-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.user-message-image {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.user-message-image:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.user-message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .message-bubble {
   max-width: 75%;
   padding: var(--spacing-md) var(--spacing-lg);

@@ -11,7 +11,7 @@
  */
 import { generateId } from '../utils/id.js';
 import { MAX_TOOL_DEPTH } from '../config.js';
-import { createStream } from '../services/ai-client.js';
+import { createStream, analyzeImages, fileToBase64 } from '../services/ai-client.js';
 import { registry } from '../tools/registry.js';
 import { executeToolCall } from '../tools/executor.js';
 
@@ -21,6 +21,8 @@ let _chatStore = null;
 let _settingsStore = null;
 /** @type {Object} toolStore 引用 */
 let _toolStore = null;
+/** @type {Object} inputBarApi 引用 { getImages, clearImages } */
+let _inputBarApi = null;
 
 /**
  * 发送锁 —— 保证 handleSend → runAI 整条异步链路串行。
@@ -48,10 +50,11 @@ let _runAIGeneration = 0;
  * @param {Object} settingsStore
  * @param {Object} toolStore
  */
-export function initChatArea(chatStore, settingsStore, toolStore) {
+export function initChatArea(chatStore, settingsStore, toolStore, inputBarApi) {
   _chatStore = chatStore;
   _settingsStore = settingsStore;
   _toolStore = toolStore;
+  _inputBarApi = inputBarApi;
 
   const input = document.getElementById('message-input');
   const sendBtn = document.getElementById('send-btn');
@@ -102,10 +105,16 @@ async function handleSend() {
     console.warn('[handleSend] _sendLock=true，上一轮链路尚未完成，拒绝新发送');
     return;
   }
-  if (!text) return;
+
+  // ★ 获取当前选中的图片
+  const images = _inputBarApi ? _inputBarApi.getImages() : [];
+  const hasImages = images.length > 0;
+
+  // 既无文字也无图片 → 拒绝
+  if (!text && !hasImages) return;
 
   _sendLock = true;
-  console.log('[handleSend] _sendLock=true，开始新一轮发送');
+  console.log('[handleSend] _sendLock=true，开始新一轮发送 (text=%s, images=%d)', text.substring(0, 30), images.length);
 
   // 确保有活动会话
   let session = _chatStore.getActiveSession();
@@ -113,11 +122,82 @@ async function handleSend() {
     session = _chatStore.createSession();
   }
 
-  // 1. 添加用户消息
+  // ── 图片预处理：base64 编码（用于显示和发送给多模态模型） ──
+  let imageBase64List = [];
+  if (hasImages) {
+    try {
+      imageBase64List = await Promise.all(
+        images.map((file) => fileToBase64(file))
+      );
+      console.log('[handleSend] 图片已编码: %d 张', imageBase64List.length);
+    } catch (err) {
+      console.error('[handleSend] 图片编码失败:', err);
+    }
+  }
+
+  // ★ 用户消息的最终文本内容（可能包含图片描述）
+  let userContent = text;
+
+  // ── 如果有图片：调用多模态模型获取描述 ──
+  if (hasImages && imageBase64List.length > 0) {
+    const settings = _settingsStore.getState();
+    const visionConfigured = settings.visionApiUrl && settings.visionApiKey;
+
+    if (visionConfigured) {
+      try {
+        // 创建临时 abort controller
+        const visionAbort = new AbortController();
+
+        // 简洁的加载提示
+        const analyzingMsg = document.createElement('div');
+        analyzingMsg.className = 'vision-analyzing-toast';
+        analyzingMsg.textContent = `🔍 正在识别 ${images.length} 张图片...`;
+
+        // ★ 由 analyzeImages 内部将 file→base64 并调用 API
+        const description = await analyzeImages(images, {
+          visionApiUrl: settings.visionApiUrl,
+          visionApiKey: settings.visionApiKey,
+          visionModel: settings.visionModel,
+          visionSystemPrompt: settings.visionSystemPrompt,
+        }, visionAbort.signal);
+
+        if (description && description.trim()) {
+          // 将图片描述拼接在用户文字前面
+          userContent = `[图片内容描述]\n${description}\n\n[用户问题]\n${text || '请根据图片内容解答以上题目'}`;
+          console.log('[handleSend] 图片识别成功，合并后内容长度=%d', userContent.length);
+        } else {
+          console.warn('[handleSend] 图片识别返回空内容');
+          userContent = text;
+        }
+      } catch (err) {
+        console.error('[handleSend] 图片识别失败:', err);
+        _chatStore.addMessage(_chatStore.getState().activeSessionId, {
+          id: generateId(),
+          role: 'assistant',
+          content: `⚠️ 图片识别失败: ${err.message}`,
+          createdAt: new Date().toISOString(),
+          _isLocalError: true,
+        });
+        _inputBarApi?.clearImages();
+        _sendLock = false;
+        return;
+      }
+    } else {
+      // vision 未配置但有图片 → 提示用户
+      console.warn('[handleSend] 图片识别模型未配置，忽略图片');
+      userContent = text;
+    }
+  }
+
+  // 清空图片
+  _inputBarApi?.clearImages();
+
+  // 1. 添加用户消息（含图片 base64 用于显示）
   const userMsg = {
     id: generateId(),
     role: 'user',
-    content: text,
+    content: text, // 显示用的原始文本
+    images: imageBase64List.length > 0 ? imageBase64List : undefined,
     createdAt: new Date().toISOString(),
   };
   _chatStore.addMessage(_chatStore.getState().activeSessionId, userMsg);
@@ -135,11 +215,10 @@ async function handleSend() {
   };
   _chatStore.addMessage(_chatStore.getState().activeSessionId, assistantMsg);
 
-  // 3. 启动 Agent Loop（runAI 内部 while 循环，整条链路串行完成后返回）
+  // 3. 启动 Agent Loop
   try {
-    await runAI(_chatStore.getState().activeSessionId, assistantMsg.id);
+    await runAI(_chatStore.getState().activeSessionId, assistantMsg.id, userContent, userMsg.id);
   } catch (err) {
-    // ★ 防御：即使 runAI 抛出未预期的异常，也确保 _sendLock 被复位
     console.error('[handleSend] runAI 抛出未预期异常:', err);
   } finally {
     _sendLock = false;
@@ -160,8 +239,10 @@ async function handleSend() {
  *
  * @param {string} sessionId
  * @param {string} firstAssistantMsgId - 第一条助手占位消息的 id
+ * @param {string} combinedUserContent - 组合后的用户内容（含图片描述），用于 API 请求；为 null 时使用原始内容
+ * @param {string} combinedUserMsgId - 对应的用户消息 ID，用于精确替换
  */
-async function runAI(sessionId, firstAssistantMsgId) {
+async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null, combinedUserMsgId = null) {
   // ★ 代际递增 —— 本次 runAI 拿到唯一代际 ID
   _runAIGeneration++;
   const myGeneration = _runAIGeneration;
@@ -205,7 +286,7 @@ async function runAI(sessionId, firstAssistantMsgId) {
       }
 
       // 构建发送给 AI 的消息列表
-      const messages = buildMessages(sessionId, currentAssistantMsgId);
+      const messages = buildMessages(sessionId, currentAssistantMsgId, combinedUserContent, combinedUserMsgId);
       if (!messages) break; // session 不存在
 
       let currentContent = '';
@@ -450,9 +531,11 @@ function _buildFallbackResponse(sessionId) {
  * 构建发送给 AI 的消息数组（过滤占位消息、规范化 content）
  * @param {string} sessionId
  * @param {string} currentAssistantMsgId - 当前轮次的占位消息 id（排除在外）
+ * @param {string} combinedUserContent - 组合后的用户内容，为 null 时使用原始 content
+ * @param {string} combinedUserMsgId - 需要替换内容的用户消息 ID
  * @returns {Array|null}
  */
-function buildMessages(sessionId, currentAssistantMsgId) {
+function buildMessages(sessionId, currentAssistantMsgId, combinedUserContent = null, combinedUserMsgId = null) {
   const session = _chatStore.getState().sessions.find((s) => s.id === sessionId);
   if (!session) return null;
 
@@ -491,8 +574,13 @@ function buildMessages(sessionId, currentAssistantMsgId) {
     .filter((m) => m.role !== 'tool' || m.toolResult)
     .map((m) => {
       if (m.role === 'user') {
-        // ★ 用户消息也清理 think 标签（防御性编程）
-        return { role: 'user', content: stripThinkContent(normalizeContent(m.content)) };
+        // ★ 图片消息：如果此消息有 images 且 combinedUserContent 存在，且 ID 匹配
+        const shouldCombine = m.images && m.images.length > 0 &&
+          combinedUserContent && m.id === combinedUserMsgId;
+        const useContent = shouldCombine
+          ? combinedUserContent
+          : normalizeContent(m.content);
+        return { role: 'user', content: stripThinkContent(useContent) };
       }
       if (m.role === 'assistant') {
         // ★ v8 修复：保留 assistant 原始 content，不再强制设为 null

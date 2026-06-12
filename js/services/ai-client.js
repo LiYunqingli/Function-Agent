@@ -9,6 +9,91 @@
 import { StreamParser } from './stream-parser.js';
 
 /**
+ * 将文件转为 base64 data URL
+ * @param {File} file
+ * @returns {Promise<string>} "data:image/png;base64,..."
+ */
+export function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * 调用多模态模型分析图片内容
+ *
+ * @param {File[]} images - 图片文件列表
+ * @param {Object} visionSettings - { visionApiUrl, visionApiKey, visionModel, visionSystemPrompt }
+ * @param {AbortSignal} signal
+ * @returns {Promise<string>} 图片描述文本
+ */
+export async function analyzeImages(images, visionSettings, signal) {
+  const { visionApiUrl, visionApiKey, visionModel, visionSystemPrompt } = visionSettings;
+
+  if (!visionApiUrl || !visionApiKey) {
+    throw new Error('请先在设置中配置图片识别模型连接信息。');
+  }
+
+  if (!images || images.length === 0) {
+    return '';
+  }
+
+  // 构建含图片的 content 数组
+  const contentParts = [];
+  if (visionSystemPrompt) {
+    contentParts.push({ type: 'text', text: visionSystemPrompt });
+  }
+
+  for (const file of images) {
+    const base64 = await fileToBase64(file);
+    // GPT-4V 兼容格式
+    contentParts.push({
+      type: 'image_url',
+      image_url: { url: base64 },
+    });
+  }
+
+  const body = {
+    model: visionModel,
+    messages: [
+      {
+        role: 'user',
+        content: contentParts,
+      },
+    ],
+    max_tokens: 2048,
+  };
+
+  console.log('[analyzeImages] 发送图片识别请求: model=%s, images=%d',
+    visionModel, images.length);
+
+  const response = await fetch(`${visionApiUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${visionApiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`图片识别 API 请求失败 (${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+  const description = data.choices?.[0]?.message?.content || '';
+
+  console.log('[analyzeImages] 图片识别完成: 描述长度=%d', description.length);
+
+  return description;
+}
+
+/**
  * 执行单次 AI 流式 SSE 请求
  *
  * @param {Array}  messages  - 消息历史（含 tool 结果）

@@ -33,6 +33,10 @@ function sanitizeSettings(settings) {
     apiKey: normalizeText(settings.apiKey),
     model: normalizeText(settings.model),
     systemPrompt: normalizeText(settings.systemPrompt),
+    visionApiUrl: normalizeText(settings.visionApiUrl),
+    visionApiKey: normalizeText(settings.visionApiKey),
+    visionModel: normalizeText(settings.visionModel),
+    visionSystemPrompt: normalizeText(settings.visionSystemPrompt),
   };
 }
 
@@ -82,12 +86,21 @@ class SettingsStore extends Store {
   }
 
   /**
-   * 检查是否已配置（apiUrl 和 apiKey 非空）
+   * 检查大语言模型是否已配置
    * @returns {boolean}
    */
   isConfigured() {
     const { apiUrl, apiKey } = this._state;
     return Boolean(apiUrl && apiKey);
+  }
+
+  /**
+   * 检查多模态模型是否已配置
+   * @returns {boolean}
+   */
+  isVisionConfigured() {
+    const { visionApiUrl, visionApiKey } = this._state;
+    return Boolean(visionApiUrl && visionApiKey);
   }
 }
 
