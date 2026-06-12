@@ -42,7 +42,7 @@
   border-style: solid;
   border-color: var(--color-accent);
   color: var(--color-accent);
-  background: rgba(var(--color-accent-rgb, 59, 130, 246), 0.1);
+  background: rgba(var(--color-accent-rgb, 126, 156, 176), 0.12);
 }
 
 .input-main {

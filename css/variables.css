@@ -9,6 +9,7 @@
   --color-bg-input: #ffffff;
   --color-bg-bubble-user: #1976d2;
   --color-bg-bubble-ai: #f0f2f5;
+  --color-bg-assistant: #f0f2f5;
   --color-bg-dialog: #ffffff;
   --color-bg-card: #ffffff;
   --color-bg-tooltip: #333333;
@@ -28,6 +29,7 @@
   --color-accent: #1976d2;
   --color-accent-hover: #1565c0;
   --color-accent-light: #e3f2fd;
+  --color-accent-rgb: 25, 118, 210;
   --color-success: #2e7d32;
   --color-success-bg: #e8f5e9;
   --color-error: #c62828;
@@ -80,46 +82,55 @@
   --transition-slow: 400ms ease;
 }
 
-/* 暗色主题 */
+/* 暗色主题 — 黑灰白配色 */
 [data-theme="dark"] {
-  --color-bg-primary: #1a1a2e;
-  --color-bg-secondary: #16213e;
-  --color-bg-sidebar: #0f1626;
-  --color-bg-hover: #1e2a45;
-  --color-bg-active: #1e3a5f;
-  --color-bg-input: #1e2a45;
-  --color-bg-bubble-user: #1565c0;
-  --color-bg-bubble-ai: #1e2a45;
-  --color-bg-dialog: #1e2a45;
-  --color-bg-card: #1e2a45;
+  /* 背景：纯黑到深灰渐变层次 */
+  --color-bg-primary: #111111;
+  --color-bg-secondary: #181818;
+  --color-bg-sidebar: #0a0a0a;
+  --color-bg-hover: #252525;
+  --color-bg-active: #333333;
+  --color-bg-input: #1c1c1c;
+  --color-bg-bubble-user: #444444;
+  --color-bg-bubble-ai: #1c1c1c;
+  --color-bg-assistant: #1c1c1c;
+  --color-bg-dialog: #1c1c1c;
+  --color-bg-card: #1c1c1c;
   --color-bg-tooltip: #e0e0e0;
-  
-  --color-text-primary: #e8eaed;
-  --color-text-secondary: #9aa0a6;
+
+  /* 文字：白 → 浅灰 → 中灰 */
+  --color-text-primary: #e0e0e0;
+  --color-text-secondary: #888888;
   --color-text-on-primary: #ffffff;
   --color-text-bubble-user: #ffffff;
-  --color-text-bubble-ai: #e8eaed;
-  --color-text-placeholder: #5f6368;
-  --color-text-link: #90caf9;
-  
-  --color-border: #2a3a5c;
-  --color-border-light: #1e2a45;
-  --color-divider: #2a3a5c;
-  
-  --color-accent: #90caf9;
-  --color-accent-hover: #64b5f6;
-  --color-accent-light: #1e3a5f;
-  --color-success: #66bb6a;
-  --color-success-bg: #1b5e20;
+  --color-text-bubble-ai: #e0e0e0;
+  --color-text-placeholder: #555555;
+  --color-text-link: #7e9cb0;
+
+  /* 边框：深灰色调 */
+  --color-border: #2a2a2a;
+  --color-border-light: #1f1f1f;
+  --color-divider: #222222;
+
+  /* 主题色：微钢蓝调，按钮有色但不刺眼 */
+  --color-accent: #7e9cb0;
+  --color-accent-hover: #95b3c4;
+  --color-accent-light: #1a2229;
+  --color-accent-rgb: 126, 156, 176;
+
+  /* 功能色：保持辨识度，暗底适配 */
+  --color-success: #4caf50;
+  --color-success-bg: #1a2e1a;
   --color-error: #ef5350;
-  --color-error-bg: #b71c1c;
+  --color-error-bg: #2e1a1a;
   --color-warning: #ffa726;
-  --color-warning-bg: #e65100;
-  --color-info: #4fc3f7;
-  --color-info-bg: #01579b;
-  
-  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.5);
-  --shadow-xl: 0 16px 48px rgba(0,0,0,0.6);
+  --color-warning-bg: #2e241a;
+  --color-info: #7e9cb0;
+  --color-info-bg: #1a2229;
+
+  /* 阴影 */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.6);
+  --shadow-xl: 0 16px 48px rgba(0,0,0,0.7);
 }
