@@ -73,6 +73,35 @@
   font-family: var(--font-mono);
 }
 
+/* ★ KaTeX 公式在消息气泡中的间距优化 */
+.message-bubble .katex-display {
+  margin: 0.3em 0;              /* 紧凑间距，避免段落 + display 双重留白 */
+}
+
+.message-bubble .katex {
+  vertical-align: text-bottom;  /* 行内公式与文字基线对齐 */
+}
+
+/* ★ 对话框中的段落下边距已由 .message-bubble p 控制，
+     如果块级公式紧贴在 p 内，去除多余上边距 */
+.message-bubble p > .katex-display:first-child {
+  margin-top: 0;
+}
+.message-bubble p > .katex-display:last-child {
+  margin-bottom: 0;
+}
+
+/* ★ 若段落内仅含一个块级公式，压缩段落边距避免双重留白 */
+.message-bubble p > .katex-display:only-child {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* ★ 段落仅含一个行内公式时，对齐到文本基线 */
+.message-bubble p > .katex:only-child {
+  vertical-align: baseline;
+}
+
 /* 复制按钮 */
 .message-actions {
   display: flex;

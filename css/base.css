@@ -95,11 +95,18 @@ input:focus, textarea:focus {
 }
 textarea { resize: vertical; }
 
-/* KaTeX 滚动 */
+/* KaTeX 通用 */
+.katex {
+  font-size: 1.05em;           /* 行内公式略放大，与正文协调 */
+  line-height: 1;               /* 避免行高被继承撑大 */
+}
 .katex-display {
   overflow-x: auto;
   overflow-y: hidden;
-  padding: 8px 0;
+  padding: 12px 0;              /* 块级公式上下留白，给滚动条空间 */
+}
+.katex-display > .katex {
+  font-size: 1.05em;            /* 块级恢复默认 */
 }
 
 /* 代码块 */

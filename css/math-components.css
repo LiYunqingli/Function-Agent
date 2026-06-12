@@ -161,6 +161,23 @@
   line-height: 1.6;
 }
 
+/* ★ KaTeX 公式在知识点提示框中的间距优化 */
+.knowledge-tip-content .katex {
+  vertical-align: text-bottom;
+  font-size: 1em;
+}
+
+.knowledge-tip-content .katex-display {
+  margin: 0.5em 0;
+}
+
+.knowledge-tip-content .katex-display:first-child {
+  margin-top: 0;
+}
+.knowledge-tip-content .katex-display:last-child {
+  margin-bottom: 0;
+}
+
 .knowledge-tip-conditions {
   margin-top: var(--spacing-sm);
   font-size: var(--font-size-sm);
