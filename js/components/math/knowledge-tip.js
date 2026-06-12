@@ -17,12 +17,29 @@ export function renderKnowledgeTip(props) {
   if (content) {
     const contentEl = document.createElement('div');
     contentEl.className = 'knowledge-tip-content';
-    // 尝试渲染内联 LaTeX
-    contentEl.innerHTML = content.replace(/\$([^$\n]+?)\$/g, (_, formula) => {
-      try {
-        return window.katex.renderToString(formula, { throwOnError: false, trust: true });
-      } catch { return `$${formula}$`; }
-    });
+    // ★ 渲染所有 LaTeX 格式：\(...\) 、 \[...\] 、 $...$ 、 $$...$$
+    let html = content
+      // 块级：\[...\]
+      .replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => {
+        try { return window.katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false, trust: true }); }
+        catch { return `\\[${formula}\\]`; }
+      })
+      // 块级：$$...$$
+      .replace(/\$\$([\s\S]*?)\$\$/g, (_, formula) => {
+        try { return window.katex.renderToString(formula.trim(), { displayMode: true, throwOnError: false, trust: true }); }
+        catch { return `$$${formula}$$`; }
+      })
+      // 行内：\(...\)
+      .replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => {
+        try { return window.katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false, trust: true }); }
+        catch { return `\\(${formula}\\)`; }
+      })
+      // 行内：$...$
+      .replace(/\$([^$\n]+?)\$/g, (_, formula) => {
+        try { return window.katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false, trust: true }); }
+        catch { return `$${formula}$`; }
+      });
+    contentEl.innerHTML = html;
     container.appendChild(contentEl);
   }
 

@@ -25,40 +25,51 @@ marked.setOptions({
 /**
  * 渲染 Markdown + LaTeX 内容
  * 处理顺序：提取 LaTeX → Markdown 渲染 → 还原 LaTeX
- * @param {string} content - Markdown 文本（含 $...$ 和 $$...$$ LaTeX）
+ * @param {string} content - Markdown 文本（支持 \(...\) / \[...\] / $...$ / $$...$$ LaTeX）
  * @returns {string} HTML 字符串
  */
 export function renderMarkdown(content) {
   if (!content) return '';
 
-  // 1. 提取并保护块级 LaTeX $$...$$
-  const blockMath = [];
-  let processed = content.replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
-    const placeholder = `%%BLOCK_MATH_${blockMath.length}%%`;
-    blockMath.push(formula.trim());
-    return placeholder;
-  });
+  // ★ 统一数学公式占位符存储（不区分块级/行内，统一编号避免冲突）
+  const mathPlaceholders = [];
+  const PLACEHOLDER_PREFIX = '%%MATH_';
 
-  // 2. 提取并保护行内 LaTeX $...$
-  const inlineMath = [];
-  processed = processed.replace(/\$([^\$\n]+?)\$/g, (match, formula) => {
-    const placeholder = `%%INLINE_MATH_${inlineMath.length}%%`;
-    inlineMath.push(formula.trim());
-    return placeholder;
-  });
+  // 1. 提取并保护所有数学公式（按顺序：\[...\] → $$...$$ → \(...\) → $...$）
+  let processed = content
+    // 1a. 块级 LaTeX: \[...\]  （模型常用格式）
+    .replace(/\\\[([\s\S]*?)\\\]/g, (match, formula) => {
+      const idx = mathPlaceholders.length;
+      mathPlaceholders.push({ formula: formula.trim(), displayMode: true });
+      return `${PLACEHOLDER_PREFIX}${idx}%%`;
+    })
+    // 1b. 块级 LaTeX: $$...$$
+    .replace(/\$\$([\s\S]*?)\$\$/g, (match, formula) => {
+      const idx = mathPlaceholders.length;
+      mathPlaceholders.push({ formula: formula.trim(), displayMode: true });
+      return `${PLACEHOLDER_PREFIX}${idx}%%`;
+    })
+    // 2a. 行内 LaTeX: \(...\)  （模型常用格式）
+    .replace(/\\\(([\s\S]*?)\\\)/g, (match, formula) => {
+      const idx = mathPlaceholders.length;
+      mathPlaceholders.push({ formula: formula.trim(), displayMode: false });
+      return `${PLACEHOLDER_PREFIX}${idx}%%`;
+    })
+    // 2b. 行内 LaTeX: $...$
+    .replace(/\$([^\$\n]+?)\$/g, (match, formula) => {
+      const idx = mathPlaceholders.length;
+      mathPlaceholders.push({ formula: formula.trim(), displayMode: false });
+      return `${PLACEHOLDER_PREFIX}${idx}%%`;
+    });
 
   // 3. 使用 marked 渲染 Markdown
   let html = marked.parse(processed);
 
-  // 4. 还原块级 LaTeX
-  blockMath.forEach((formula, i) => {
-    html = html.replace(`%%BLOCK_MATH_${i}%%`, renderKatex(formula, true));
-  });
-
-  // 5. 还原行内 LaTeX
-  inlineMath.forEach((formula, i) => {
-    html = html.replace(`%%INLINE_MATH_${i}%%`, renderKatex(formula, false));
-  });
+  // 4. 还原所有数学公式（倒序遍历保证替换准确）
+  for (let i = mathPlaceholders.length - 1; i >= 0; i--) {
+    const { formula, displayMode } = mathPlaceholders[i];
+    html = html.replace(`${PLACEHOLDER_PREFIX}${i}%%`, renderKatex(formula, displayMode));
+  }
 
   return html;
 }
