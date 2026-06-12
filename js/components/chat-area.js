@@ -121,39 +121,62 @@ async function handleSend() {
   if (!session) {
     session = _chatStore.createSession();
   }
+  const sessionId = _chatStore.getState().activeSessionId;
 
-  // ── 图片预处理：base64 编码（用于显示和发送给多模态模型） ──
+  // ── 图片 base64 编码（用于 UI 缩略图 + 发给多模态模型） ──
   let imageBase64List = [];
   if (hasImages) {
     try {
-      imageBase64List = await Promise.all(
-        images.map((file) => fileToBase64(file))
-      );
+      imageBase64List = await Promise.all(images.map((file) => fileToBase64(file)));
       console.log('[handleSend] 图片已编码: %d 张', imageBase64List.length);
     } catch (err) {
       console.error('[handleSend] 图片编码失败:', err);
     }
   }
 
-  // ★ 用户消息的最终文本内容（可能包含图片描述）
-  let userContent = text;
+  // ★ 1. 立即添加用户消息到对话（含图片缩略图）
+  const userMsg = {
+    id: generateId(),
+    role: 'user',
+    content: text,                             // 显示用原始文本
+    images: imageBase64List.length > 0 ? imageBase64List : undefined,
+    createdAt: new Date().toISOString(),
+  };
+  _chatStore.addMessage(sessionId, userMsg);
 
-  // ── 如果有图片：调用多模态模型获取描述 ──
+  // 清空输入栏
+  input.value = '';
+  input.style.height = 'auto';
+  _inputBarApi?.clearImages();
+  scrollToBottom();
+
+  // ★ 2. 组合后的用户内容（默认 = 原始文本，有图片则后续追加图片描述）
+  let userContent = text;
+  let assistantMsgId;
+
   if (hasImages && imageBase64List.length > 0) {
+    // ★ 2a. 创建 "多模态模型 thinking" 占位消息，用户立刻看到
+    const thinkingMsg = {
+      id: generateId(),
+      role: 'assistant',
+      content: '',
+      toolCalls: [],
+      isStreaming: false,
+      _isVisionThinking: true,
+      createdAt: new Date().toISOString(),
+    };
+    _chatStore.addMessage(sessionId, thinkingMsg);
+    assistantMsgId = thinkingMsg.id;
+    scrollToBottom();
+
     const settings = _settingsStore.getState();
     const visionConfigured = settings.visionApiUrl && settings.visionApiKey;
 
     if (visionConfigured) {
       try {
-        // 创建临时 abort controller
         const visionAbort = new AbortController();
 
-        // 简洁的加载提示
-        const analyzingMsg = document.createElement('div');
-        analyzingMsg.className = 'vision-analyzing-toast';
-        analyzingMsg.textContent = `🔍 正在识别 ${images.length} 张图片...`;
-
-        // ★ 由 analyzeImages 内部将 file→base64 并调用 API
+        // ★ 2b. 调用多模态模型（异步等待）
         const description = await analyzeImages(images, {
           visionApiUrl: settings.visionApiUrl,
           visionApiKey: settings.visionApiKey,
@@ -162,62 +185,61 @@ async function handleSend() {
         }, visionAbort.signal);
 
         if (description && description.trim()) {
-          // 将图片描述拼接在用户文字前面
           userContent = `[图片内容描述]\n${description}\n\n[用户问题]\n${text || '请根据图片内容解答以上题目'}`;
           console.log('[handleSend] 图片识别成功，合并后内容长度=%d', userContent.length);
         } else {
           console.warn('[handleSend] 图片识别返回空内容');
           userContent = text;
         }
+
+        // ★ 2c. 识别完成 → thinking 消息转为正常 assistant 占位（准备接 runAI 流式输出）
+        _chatStore.updateMessage(sessionId, assistantMsgId, {
+          content: '',
+          _isVisionThinking: false,
+          isStreaming: true,
+        });
       } catch (err) {
         console.error('[handleSend] 图片识别失败:', err);
-        _chatStore.addMessage(_chatStore.getState().activeSessionId, {
-          id: generateId(),
-          role: 'assistant',
+        // 失败时更新 thinking 消息为错误提示
+        _chatStore.updateMessage(sessionId, assistantMsgId, {
           content: `⚠️ 图片识别失败: ${err.message}`,
-          createdAt: new Date().toISOString(),
+          _isVisionThinking: false,
+          isStreaming: false,
           _isLocalError: true,
         });
-        _inputBarApi?.clearImages();
         _sendLock = false;
+        console.log('[handleSend] _sendLock=false（图片识别失败）');
         return;
       }
     } else {
-      // vision 未配置但有图片 → 提示用户
-      console.warn('[handleSend] 图片识别模型未配置，忽略图片');
-      userContent = text;
+      // vision 未配置但有图片 → 更新 thinking 为错误提示
+      _chatStore.updateMessage(sessionId, assistantMsgId, {
+        content: '⚠️ 未配置图片识别模型，请在设置中配置多模态大模型连接信息。',
+        _isVisionThinking: false,
+        isStreaming: false,
+        _isLocalError: true,
+      });
+      _sendLock = false;
+      console.log('[handleSend] _sendLock=false（vision 未配置）');
+      return;
     }
+  } else {
+    // ★ 无图片：创建普通助手占位消息
+    const assistantMsg = {
+      id: generateId(),
+      role: 'assistant',
+      content: '',
+      toolCalls: [],
+      isStreaming: true,
+      createdAt: new Date().toISOString(),
+    };
+    _chatStore.addMessage(sessionId, assistantMsg);
+    assistantMsgId = assistantMsg.id;
   }
-
-  // 清空图片
-  _inputBarApi?.clearImages();
-
-  // 1. 添加用户消息（含图片 base64 用于显示）
-  const userMsg = {
-    id: generateId(),
-    role: 'user',
-    content: text, // 显示用的原始文本
-    images: imageBase64List.length > 0 ? imageBase64List : undefined,
-    createdAt: new Date().toISOString(),
-  };
-  _chatStore.addMessage(_chatStore.getState().activeSessionId, userMsg);
-  input.value = '';
-  input.style.height = 'auto';
-
-  // 2. 创建空的助手消息（流式占位）
-  const assistantMsg = {
-    id: generateId(),
-    role: 'assistant',
-    content: '',
-    toolCalls: [],
-    isStreaming: true,
-    createdAt: new Date().toISOString(),
-  };
-  _chatStore.addMessage(_chatStore.getState().activeSessionId, assistantMsg);
 
   // 3. 启动 Agent Loop
   try {
-    await runAI(_chatStore.getState().activeSessionId, assistantMsg.id, userContent, userMsg.id);
+    await runAI(sessionId, assistantMsgId, userContent, userMsg.id);
   } catch (err) {
     console.error('[handleSend] runAI 抛出未预期异常:', err);
   } finally {
@@ -567,6 +589,10 @@ function buildMessages(sessionId, currentAssistantMsgId, combinedUserContent = n
       }
       // ★ 过滤客户端生成的错误消息 —— 这些不是 AI 的真实回复，不应发给 API
       if (m._isLocalError) {
+        return false;
+      }
+      // ★ 过滤多模态 thinking 占位消息 —— 不应发给 API
+      if (m._isVisionThinking) {
         return false;
       }
       return true;

@@ -63,6 +63,23 @@ export function createMessageBubble(message, toolStore, chatStore) {
 
     wrapper.appendChild(bubble);
   } else if (message.role === 'assistant') {
+    // ★ 多模态 thinking 占位 —— 显示特殊的 loading 指示器
+    if (message._isVisionThinking) {
+      const bubble = document.createElement('div');
+      bubble.className = 'message-bubble vision-thinking-bubble';
+      const indicator = document.createElement('div');
+      indicator.className = 'vision-thinking-indicator';
+      indicator.innerHTML = `
+        <div class="vision-thinking-dots">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+        <span class="vision-thinking-text">多模态模型识别中...</span>
+      `;
+      bubble.appendChild(indicator);
+      wrapper.appendChild(bubble);
+      return wrapper;
+    }
+
     // ★ 判断是否有文本内容（非空且非纯空白）
     const hasTextContent = message.content && message.content.trim();
     const hasToolCalls = message.toolCalls && message.toolCalls.length > 0;
