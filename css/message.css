@@ -163,22 +163,58 @@
   margin: 0 !important;
   max-width: none !important;
   border-radius: 0 !important;
-  overflow-y: auto !important;
+  overflow: hidden !important;
   box-shadow: none !important;
   /* 尺寸通过 JS 内联设置（100vw × 100vh） */
+  /* ★ flex 纵向布局，让 body 撑满剩余高度 */
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .tool-call-card.fullscreen .tool-call-body {
   padding: var(--spacing-lg);
+  /* ★ 撑满全屏剩余高度，自身可滚动 */
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .tool-call-card.fullscreen .tool-call-header {
   cursor: default;
+  flex-shrink: 0;
 }
 
-/* 全屏时图表容器填满可用空间 */
+/* ★ 全屏时 math-component（fade-in）填满 body 高度 */
+.tool-call-card.fullscreen .tool-call-body .math-component {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ★ math-component-body 也随之拉伸 */
+.tool-call-card.fullscreen .tool-call-body .math-component-body {
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ★ 全屏时图表容器填满可用空间 */
 .tool-call-card.fullscreen .plotly-container {
-  min-height: 86vh;
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100% !important;
+}
+
+/* ★ 全屏时 canvas 容器填满 */
+.tool-call-card.fullscreen .canvas-container {
+  flex: 1 1 0;
+  min-height: 0;
+  height: 100% !important;
 }
 
 /* 全屏关闭按钮 */
