@@ -4,6 +4,7 @@
  * @param {Object} props - { title, headers, rows }
  * @returns {HTMLElement}
  */
+import { renderLatexHTML } from '../../utils/latex.js';
 export function renderComparisonTable(props) {
   const { title, headers = [], rows = [] } = props;
 
@@ -45,17 +46,7 @@ export function renderComparisonTable(props) {
       td.style.cssText = `padding:8px 12px;text-align:${cellIdx === 0 ? 'left' : 'center'};border-bottom:1px solid var(--color-border-tertiary);`;
 
       // 渲染 LaTeX
-      let content = String(cell || '');
-      content = content
-        .replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => {
-          try { return window.katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false, trust: true }); }
-          catch { return content; }
-        })
-        .replace(/\$([^$\n]+?)\$/g, (_, formula) => {
-          try { return window.katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false, trust: true }); }
-          catch { return content; }
-        });
-
+      const content = renderLatexHTML(String(cell || ''));
       td.innerHTML = content;
       tr.appendChild(td);
     });

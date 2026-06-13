@@ -4,6 +4,7 @@
  * @param {Object} props - { title, questions: [{ question, options, correctAnswer, explanation }] }
  * @returns {HTMLElement}
  */
+import { renderLatexHTML } from '../../utils/latex.js';
 export function renderInteractiveQuiz(props) {
   const { title, questions = [] } = props;
 
@@ -47,17 +48,7 @@ export function renderInteractiveQuiz(props) {
     // 题目（支持 LaTeX）
     const qText = document.createElement('div');
     qText.style.cssText = 'font-size:14px;line-height:1.6;margin-bottom:12px;';
-    let html = q.question || '';
-    html = html
-      .replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => {
-        try { return window.katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false, trust: true }); }
-        catch { return html; }
-      })
-      .replace(/\$([^$\n]+?)\$/g, (_, formula) => {
-        try { return window.katex.renderToString(formula.trim(), { displayMode: false, throwOnError: false, trust: true }); }
-        catch { return html; }
-      });
-    qText.innerHTML = html;
+    qText.innerHTML = renderLatexHTML(q.question || '');
     card.appendChild(qText);
 
     // 选项
@@ -68,7 +59,8 @@ export function renderInteractiveQuiz(props) {
     (q.options || []).forEach((opt, optIdx) => {
       const optBtn = document.createElement('button');
       optBtn.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border:1px solid var(--color-border-tertiary);border-radius:8px;background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer;font-size:14px;text-align:left;line-height:1.5;width:100%;transition:border-color 0.2s,background 0.2s,color 0.2s,box-shadow 0.2s;';
-      optBtn.innerHTML = `<span style="font-weight:500;min-width:20px;color:var(--color-text-primary);">${optionLabels[optIdx]}.</span><span style="color:var(--color-text-primary);">${opt}</span>`;
+      const optHtml = renderLatexHTML(opt);
+      optBtn.innerHTML = `<span style="font-weight:500;min-width:20px;color:var(--color-text-primary);">${optionLabels[optIdx]}.</span><span style="color:var(--color-text-primary);">${optHtml}</span>`;
 
       // 悬浮颜色反馈
       optBtn.addEventListener('mouseenter', () => {
@@ -118,7 +110,7 @@ export function renderInteractiveQuiz(props) {
         if (q.explanation) {
           const explain = document.createElement('div');
           explain.style.cssText = `margin-top:8px;padding:8px 12px;border-radius:8px;font-size:13px;line-height:1.6;background:${isCorrect ? 'rgba(67,160,71,0.08)' : 'rgba(229,57,53,0.08)'};color:var(--color-text-secondary);`;
-          explain.textContent = isCorrect ? '正确! ' + q.explanation : '解析: ' + q.explanation;
+          explain.innerHTML = renderLatexHTML((isCorrect ? '✅ 正确！' : '📝 解析：') + q.explanation);
           card.appendChild(explain);
         }
       });
