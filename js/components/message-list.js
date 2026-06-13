@@ -221,6 +221,7 @@ function updateSnapshot(message) {
     toolCallsCount: message.toolCalls?.length || 0,
     isStreaming: message.isStreaming || false,
     contentLen: (message.content || '').length,
+    hasImageDescription: !!(message.imageDescription),
     toolResults,
   });
 }
@@ -259,6 +260,9 @@ function detectChange(message) {
   // 内容长度大幅变化（>100 字符，可能是更新了整个消息）
   // 但小增量（流式 delta）不需要重建
   if (Math.abs(prev.contentLen - currentContentLen) > 100) return true;
+
+  // ★ 图片描述从无到有 → 需要重建（显示展开按钮）
+  if (prev.hasImageDescription !== !!(message.imageDescription)) return true;
 
   return false;
 }

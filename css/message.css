@@ -8,7 +8,7 @@
 .message-wrapper.assistant { align-items: flex-start; }
 .message-wrapper.tool { align-items: flex-start; }
 
-/* 用户消息中的图片展示 */
+/* 用户消息中的图片展示（旧：内联在气泡中，现已弃用但保留兼容） */
 .user-message-images {
   display: flex;
   flex-wrap: wrap;
@@ -27,6 +27,67 @@
 .user-message-image:hover {
   transform: scale(1.08);
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* ★ 图片独立卡片 —— 图片与文字拆分为不同消息 */
+.image-card {
+  max-width: 75%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-bubble-user);
+  color: var(--color-text-bubble-user);
+  border-bottom-right-radius: var(--radius-xs);
+  overflow: hidden;
+}
+.image-card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.image-card-grid .user-message-image {
+  width: 160px;
+  height: 160px;
+  border: none;
+}
+
+/* ★ 图片描述展开按钮 */
+.image-description-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 0;
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.image-description-toggle:hover {
+  color: var(--color-text-primary);
+}
+.image-description-toggle .toggle-icon {
+  font-size: 10px;
+  transition: transform 0.2s ease;
+}
+
+/* ★ 图片描述展开内容 */
+.image-description-content {
+  margin-top: 6px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text-primary);
+  animation: fadeSlideDown 0.2s ease;
+}
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .user-message-text {
   white-space: pre-wrap;

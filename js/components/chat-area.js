@@ -134,15 +134,43 @@ async function handleSend() {
     }
   }
 
-  // ★ 1. 立即添加用户消息到对话（含图片缩略图）
-  const userMsg = {
-    id: generateId(),
-    role: 'user',
-    content: text,                             // 显示用原始文本
-    images: imageBase64List.length > 0 ? imageBase64List : undefined,
-    createdAt: new Date().toISOString(),
-  };
-  _chatStore.addMessage(sessionId, userMsg);
+  // ★ 1. 如果有图片，先添加独立的图片卡片消息（与文字分开）
+  let imageMsgId = null;
+  if (hasImages && imageBase64List.length > 0) {
+    const imageMsg = {
+      id: generateId(),
+      role: 'user',
+      content: '',                               // 图片卡片无文字
+      images: imageBase64List,
+      _isImageCard: true,                        // 标记为图片独立卡片
+      createdAt: new Date().toISOString(),
+    };
+    _chatStore.addMessage(sessionId, imageMsg);
+    imageMsgId = imageMsg.id;
+  }
+
+  // ★ 2. 添加文字消息（如果有的话）
+  let userMsg;
+  if (text) {
+    userMsg = {
+      id: generateId(),
+      role: 'user',
+      content: text,
+      images: undefined,                          // 文字消息不包含图片
+      createdAt: new Date().toISOString(),
+    };
+    _chatStore.addMessage(sessionId, userMsg);
+  } else {
+    // 无文字但有图片：创建一条空的 user 消息占位
+    // buildMessages 会将 combinedUserContent 注入到此消息中
+    userMsg = {
+      id: generateId(),
+      role: 'user',
+      content: '',
+      createdAt: new Date().toISOString(),
+    };
+    _chatStore.addMessage(sessionId, userMsg);
+  }
 
   // 清空输入栏
   input.value = '';
@@ -187,6 +215,13 @@ async function handleSend() {
         if (description && description.trim()) {
           userContent = `[图片内容描述]\n${description}\n\n[用户问题]\n${text || '请根据图片内容解答以上题目'}`;
           console.log('[handleSend] 图片识别成功，合并后内容长度=%d', userContent.length);
+
+          // ★ 将图片描述存储到图片卡片消息中，用于 UI 显示
+          if (imageMsgId) {
+            _chatStore.updateMessage(sessionId, imageMsgId, {
+              imageDescription: description,
+            });
+          }
         } else {
           console.warn('[handleSend] 图片识别返回空内容');
           userContent = text;
@@ -595,14 +630,18 @@ function buildMessages(sessionId, currentAssistantMsgId, combinedUserContent = n
       if (m._isVisionThinking) {
         return false;
       }
+      // ★ 过滤图片独立卡片消息 —— 图片已通过多模态模型转为文字描述，图片卡片不应发给 API
+      if (m._isImageCard) {
+        return false;
+      }
       return true;
     })
     .filter((m) => m.role !== 'tool' || m.toolResult)
     .map((m) => {
       if (m.role === 'user') {
-        // ★ 图片消息：如果此消息有 images 且 combinedUserContent 存在，且 ID 匹配
-        const shouldCombine = m.images && m.images.length > 0 &&
-          combinedUserContent && m.id === combinedUserMsgId;
+        // ★ 图片用户消息：使用 combinedUserContent（包含图片描述 + 用户问题的合并内容）
+        //   combinedUserMsgId 指向文字用户消息（图片已拆分为独立卡片并被过滤）
+        const shouldCombine = combinedUserContent && m.id === combinedUserMsgId;
         const useContent = shouldCombine
           ? combinedUserContent
           : normalizeContent(m.content);
