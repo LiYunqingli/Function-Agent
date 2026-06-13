@@ -61,6 +61,9 @@ export function initMessageList(chatStore, toolStore) {
   toolStore.subscribe('executingTools', (_newVal, _oldVal) => {
     scheduleRender();
   });
+
+  // ★ 首次渲染：页面刷新后需主动渲染当前活动会话的消息
+  scheduleRender();
 }
 
 /** 渲染调度标志 —— 合并同一微任务内的多次渲染请求 */
