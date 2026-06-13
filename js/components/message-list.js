@@ -109,9 +109,11 @@ function renderMessages() {
     renderFull(messageList, messages);
   }
 
-  // 自动滚动到底部
+  // 自动滚动到底部（双 rAF 确保 DOM 布局完成后取值）
   requestAnimationFrame(() => {
-    messageList.scrollTop = messageList.scrollHeight;
+    requestAnimationFrame(() => {
+      messageList.scrollTop = messageList.scrollHeight;
+    });
   });
 }
 
