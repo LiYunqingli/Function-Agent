@@ -54,13 +54,29 @@ initSettingsDialog(settingsStore, chatStore);
 
 // ===== 欢迎页面逻辑 =====
 const welcomePage = document.getElementById('welcome-page');
+const welcomeNewChatBtn = document.getElementById('welcome-new-chat');
+const inputBar = document.querySelector('.input-bar');
 
 function updateWelcomeVisibility() {
   const activeSession = chatStore.getActiveSession();
+  const isSessionEmpty = activeSession && (!activeSession.messages || activeSession.messages.length === 0);
+
   if (activeSession) {
+    // 有会话（不管有没有消息）→ 隐藏欢迎页，显示输入框
     welcomePage.classList.add('hidden');
+    if (inputBar) inputBar.style.display = '';
   } else {
+    // 无会话 → 显示欢迎页，隐藏输入框
     welcomePage.classList.remove('hidden');
+    if (inputBar) inputBar.style.display = 'none';
+    return;
+  }
+
+  if (isSessionEmpty) {
+    // 空会话 → 显示欢迎页（无开始按钮），但输入框可见
+    welcomePage.classList.remove('hidden');
+    if (welcomeNewChatBtn) welcomeNewChatBtn.style.display = 'none';
+    if (inputBar) inputBar.style.display = '';
   }
 }
 
@@ -68,7 +84,7 @@ chatStore.subscribe('activeSessionId', updateWelcomeVisibility);
 chatStore.subscribe('sessions', updateWelcomeVisibility);
 
 // 欢迎页"开始新对话"按钮
-document.getElementById('welcome-new-chat')?.addEventListener('click', () => {
+welcomeNewChatBtn?.addEventListener('click', () => {
   chatStore.createSession();
   document.getElementById('message-input')?.focus();
 });
