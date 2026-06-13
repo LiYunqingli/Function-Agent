@@ -174,7 +174,7 @@
 /* ===== 署名徽章 ===== */
 .signature-badge {
   position: fixed;
-  bottom: 16px;
+  bottom: calc(var(--input-bar-height, 72px) + 8px);
   right: 20px;
   z-index: 100;
   display: flex;
