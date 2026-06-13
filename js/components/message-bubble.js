@@ -134,13 +134,14 @@ export function createMessageBubble(message, toolStore, chatStore) {
 /**
  * 创建图片独立卡片 —— 图片作为单独的消息气泡显示
  *
- * 结构：
+ * ★ 结构（重构：描述区域独立于蓝色图片卡片，不再嵌套其中）
  *   .message-wrapper.user.fade-in
- *     .image-card
+ *     .image-card                         (蓝色气泡 — 仅包裹图片)
  *       .image-card-grid
- *         img.user-message-image  (可点击查看大图)
- *       .image-description-toggle  (展开/折叠按钮，识别完成后显示)
- *       .image-description-content (描述内容，可展开/折叠)
+ *         img.user-message-image          (可点击查看大图)
+ *     .image-description-area             (独立区域 — 蓝色气泡之外)
+ *       .image-description-toggle         (展开/折叠按钮)
+ *       .image-description-content        (描述内容，可展开/折叠)
  *
  * @param {Object} message - 用户消息对象（含 images 和可选的 imageDescription）
  * @returns {HTMLElement}
@@ -150,10 +151,10 @@ function createUserImageCard(message) {
   wrapper.className = `message-wrapper user fade-in`;
   wrapper.dataset.messageId = message.id;
 
+  // ===== 图片卡片（蓝色气泡，仅包裹图片网格） =====
   const card = document.createElement('div');
   card.className = 'image-card';
 
-  // 图片网格
   const imageGrid = document.createElement('div');
   imageGrid.className = 'image-card-grid';
   message.images.forEach((src) => {
@@ -175,10 +176,14 @@ function createUserImageCard(message) {
     imageGrid.appendChild(img);
   });
   card.appendChild(imageGrid);
+  wrapper.appendChild(card);
 
-  // ★ 图片描述展开区域（识别完成后显示）
+  // ===== 图片描述区域（蓝色图片卡片之外，视觉独立） =====
   const description = message.imageDescription;
   if (description) {
+    const descArea = document.createElement('div');
+    descArea.className = 'image-description-area';
+
     const toggle = document.createElement('button');
     toggle.className = 'image-description-toggle';
     toggle.innerHTML = `
@@ -200,14 +205,13 @@ function createUserImageCard(message) {
       toggle.querySelector('.toggle-label').textContent = isExpanded ? '查看图片描述' : '收起图片描述';
     });
 
-    card.appendChild(toggle);
-    card.appendChild(content);
+    descArea.appendChild(toggle);
+    descArea.appendChild(content);
+    wrapper.appendChild(descArea);
   } else if (message._isVisionThinking !== undefined) {
     // 图片识别尚未完成 —— 不显示任何描述区域
-    // （_isVisionThinking 标记会在识别完成后被清除）
   }
 
-  wrapper.appendChild(card);
   return wrapper;
 }
 
