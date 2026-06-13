@@ -85,10 +85,22 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
       </button>
     </div>
-  </main>
-  
-  <!-- 设置弹窗 -->
-  <div id="settings-dialog" class="dialog-overlay" style="display:none;">
+
+    <!-- 欢迎页面（无会话时显示） -->
+    <div id="welcome-page" class="welcome-page">
+      <div class="welcome-content">
+        <h2>📐 欢迎使用Function-Agent</h2>
+        <p>AI 驱动的智能助手，支持工具调用与可视化图形</p>
+        <div class="welcome-features">
+          <div class="feature-card">🎯 极限 · 微积分 · 级数</div>
+          <div class="feature-card">📈 函数图像 · 3D 曲面</div>
+          <div class="feature-card">🔄 动画演示 · 交互式探索</div>
+          <div class="feature-card">📝 分步解题 · 知识点提示</div>
+        </div>
+        <button id="welcome-new-chat" class="btn btn-primary btn-lg">开始新对话</button>
+      </div>
+    </div>
+  </main>  <div id="settings-dialog" class="dialog-overlay" style="display:none;">
     <div class="dialog">
       <div class="dialog-header">
         <h2>⚙️ 设置</h2>
@@ -155,22 +167,7 @@
       </div>
     </div>
   </div>
-  
-  <!-- 欢迎页面（无会话时显示） -->
-  <div id="welcome-page" class="welcome-page">
-    <div class="welcome-content">
-      <h2>📐 欢迎使用Function-Agent</h2>
-      <p>AI 驱动的智能助手，支持工具调用与可视化图形</p>
-      <div class="welcome-features">
-        <div class="feature-card">🎯 极限 · 微积分 · 级数</div>
-        <div class="feature-card">📈 函数图像 · 3D 曲面</div>
-        <div class="feature-card">🔄 动画演示 · 交互式探索</div>
-        <div class="feature-card">📝 分步解题 · 知识点提示</div>
-      </div>
-      <button id="welcome-new-chat" class="btn btn-primary btn-lg">开始新对话</button>
-    </div>
-  </div>
-  
+
   <!-- App JS (ES Module) -->
   <script type="module" src="js/app.js"></script>
 </body>
