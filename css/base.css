@@ -136,3 +136,17 @@ pre code {
 [data-theme="dark"] .icon-dark { display: block; }
 .icon-dark { display: none; }
 .icon-light { display: block; }
+
+/* 项目 Logo */
+.logo-icon {
+  width: 24px;
+  height: 24px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+.logo-icon-lg {
+  width: 40px;
+  height: 40px;
+  vertical-align: middle;
+  margin-right: 8px;
+}
