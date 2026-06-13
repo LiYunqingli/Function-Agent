@@ -4,7 +4,7 @@
 import { safeEvaluate } from '../../services/math-evaluator.js';
 
 export async function executeAnimateLimit(args) {
-  const { expression, approachPoint, limitValue, direction = 'both', steps = 20 } = args;
+  const { expression, approachPoint, limitValue, direction = 'both', steps = 20, stepInterval = 250 } = args;
 
   // 参数验证
   if (!expression) {
@@ -23,6 +23,6 @@ export async function executeAnimateLimit(args) {
 
   return {
     componentType: 'limit-animation',
-    props: { expression, approachPoint, limitValue, direction, steps },
+    props: { expression, approachPoint, limitValue, direction, steps, stepInterval },
   };
 }

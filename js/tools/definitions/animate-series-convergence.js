@@ -4,7 +4,7 @@
 import { safeEvaluate } from '../../services/math-evaluator.js';
 
 export async function executeAnimateSeriesConvergence(args) {
-  const { seriesExpression, partialSumExpression, maxTerms = 20, nRange = [1, 50] } = args;
+  const { seriesExpression, partialSumExpression, maxTerms = 20, nRange = [1, 50], stepInterval = 300 } = args;
 
   if (!partialSumExpression) {
     throw new Error('partialSumExpression 参数不能为空');
@@ -18,6 +18,6 @@ export async function executeAnimateSeriesConvergence(args) {
 
   return {
     componentType: 'series-convergence',
-    props: { seriesExpression, partialSumExpression, maxTerms, nRange },
+    props: { seriesExpression, partialSumExpression, maxTerms, nRange, stepInterval },
   };
 }

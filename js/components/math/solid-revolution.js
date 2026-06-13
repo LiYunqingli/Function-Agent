@@ -1,11 +1,11 @@
 /**
  * 旋转体动画组件（Plotly 3D）
- * @param {Object} props - { expression, axis, xFrom, xTo }
+ * @param {Object} props - { expression, axis, xFrom, xTo, stepInterval, angleIncrement }
  */
 import { linspace, safeEvaluateTable } from '../../services/math-evaluator.js';
 
 export function renderSolidRevolution(props) {
-  const { expression, axis = 'x', xFrom, xTo } = props;
+  const { expression, axis = 'x', xFrom, xTo, stepInterval = 200, angleIncrement = 10 } = props;
 
   const container = document.createElement('div');
   container.className = 'math-component fade-in';
@@ -98,10 +98,10 @@ export function renderSolidRevolution(props) {
     let deg = 30;
     angleSlider.value = '30'; draw(30); angleLabel.textContent = '30°';
     animTimer = setInterval(() => {
-      deg += 10;
+      deg += angleIncrement;
       if (deg > 360) { clearInterval(animTimer); animTimer = null; playBtn.textContent = '▶ 旋转动画'; deg = 360; }
       angleSlider.value = String(deg); angleLabel.textContent = `${deg}°`; draw(deg);
-    }, 200);
+    }, stepInterval);
   });
 
   setTimeout(() => draw(360), 300);

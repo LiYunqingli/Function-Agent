@@ -1,11 +1,11 @@
 /**
  * 极限逼近动画组件（Canvas2D）
- * @param {Object} props - { expression, approachPoint, limitValue, direction, steps }
+ * @param {Object} props - { expression, approachPoint, limitValue, direction, steps, stepInterval }
  */
 import { safeEvaluate, linspace } from '../../services/math-evaluator.js';
 
 export function renderLimitAnimation(props) {
-  const { expression, approachPoint, limitValue, direction = 'both', steps = 20 } = props;
+  const { expression, approachPoint, limitValue, direction = 'both', steps = 20, stepInterval = 250 } = props;
 
   const container = document.createElement('div');
   container.className = 'math-component fade-in';
@@ -121,7 +121,7 @@ export function renderLimitAnimation(props) {
     slider.value = currentStep;
     stepLabel.textContent = `步骤: ${currentStep}/${steps}`;
     draw(currentStep);
-    animId = requestAnimationFrame(() => setTimeout(animate, 250));
+    animId = requestAnimationFrame(() => setTimeout(animate, stepInterval));
   }
 
   playBtn.addEventListener('click', () => {

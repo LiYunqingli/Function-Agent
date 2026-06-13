@@ -1,11 +1,11 @@
 /**
  * 泰勒展开动画组件（Plotly）
- * @param {Object} props - { expression, center, maxOrder, xRange }
+ * @param {Object} props - { expression, center, maxOrder, xRange, stepInterval }
  */
 import { safeEvaluate, safeEvaluateTable, numericalDerivative, linspace } from '../../services/math-evaluator.js';
 
 export function renderTaylorAnimation(props) {
-  const { expression, center = 0, maxOrder = 8, xRange = [-6, 6] } = props;
+  const { expression, center = 0, maxOrder = 8, xRange = [-6, 6], stepInterval = 800 } = props;
 
   const container = document.createElement('div');
   container.className = 'math-component fade-in';
@@ -136,7 +136,7 @@ export function renderTaylorAnimation(props) {
       if (n > maxOrder) { clearInterval(animTimer); animTimer = null; playBtn.textContent = '▶ 动画'; return; }
       orderSlider.value = String(n);
       draw(n);
-    }, 800);
+    }, stepInterval);
   });
 
   setTimeout(() => draw(3), 200);

@@ -1,12 +1,12 @@
 /**
  * 级数收敛动画组件（Plotly + Canvas）
- * @param {Object} props - { seriesExpression, partialSumExpression, maxTerms, nRange }
+ * @param {Object} props - { seriesExpression, partialSumExpression, maxTerms, nRange, stepInterval }
  * @returns {HTMLElement}
  */
 import { safeEvaluate, linspace } from '../../services/math-evaluator.js';
 
 export function renderSeriesConvergence(props) {
-  const { seriesExpression, partialSumExpression, maxTerms = 20, nRange = [1, 50] } = props;
+  const { seriesExpression, partialSumExpression, maxTerms = 20, nRange = [1, 50], stepInterval = 300 } = props;
 
   const container = document.createElement('div');
   container.className = 'math-component fade-in';
@@ -141,7 +141,7 @@ export function renderSeriesConvergence(props) {
       termLabel.textContent = `当前: ${step}/${nRange[1] - nRange[0] + 1} 项`;
       draw(step);
       step++;
-    }, 300);
+    }, stepInterval);
   });
 
   setTimeout(() => draw(maxTerms), 200);

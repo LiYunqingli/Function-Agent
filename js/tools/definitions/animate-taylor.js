@@ -4,7 +4,7 @@
 import { safeEvaluate } from '../../services/math-evaluator.js';
 
 export async function executeAnimateTaylor(args) {
-  const { expression, center = 0, maxOrder = 8, xRange = [-6, 6] } = args;
+  const { expression, center = 0, maxOrder = 8, xRange = [-6, 6], stepInterval = 800 } = args;
 
   // 参数验证
   if (!expression) {
@@ -20,6 +20,6 @@ export async function executeAnimateTaylor(args) {
 
   return {
     componentType: 'taylor-animation',
-    props: { expression, center, maxOrder, xRange },
+    props: { expression, center, maxOrder, xRange, stepInterval },
   };
 }

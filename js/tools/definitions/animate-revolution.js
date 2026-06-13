@@ -4,7 +4,7 @@
 import { safeEvaluate } from '../../services/math-evaluator.js';
 
 export async function executeAnimateRevolution(args) {
-  const { expression, axis = 'x', xFrom, xTo } = args;
+  const { expression, axis = 'x', xFrom, xTo, stepInterval = 200, angleIncrement = 10 } = args;
 
   // 参数验证
   if (!expression) {
@@ -23,6 +23,6 @@ export async function executeAnimateRevolution(args) {
 
   return {
     componentType: 'solid-revolution',
-    props: { expression, axis, xFrom, xTo },
+    props: { expression, axis, xFrom, xTo, stepInterval, angleIncrement },
   };
 }

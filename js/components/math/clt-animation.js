@@ -1,7 +1,7 @@
 /**
  * 中心极限定理动画组件（Plotly + 按钮）
  * 从任意分布抽样，逐步展示样本均值的分布趋向正态
- * @param {Object} props - { sourceDistribution, sampleSizes, samplesPerStep, numSteps }
+ * @param {Object} props - { sourceDistribution, sampleSizes, samplesPerStep, numSteps, stepInterval }
  * @returns {HTMLElement}
  */
 import { linspace } from '../../services/math-evaluator.js';
@@ -12,6 +12,7 @@ export function renderCLTAnimation(props) {
     sampleSizes = [1, 2, 5, 10, 30, 50],
     samplesPerStep = 500,
     numSteps = 20,
+    stepInterval = 200,
   } = props;
 
   const container = document.createElement('div');
@@ -135,12 +136,12 @@ export function renderCLTAnimation(props) {
       }
       info.textContent = `样本数: ${sampleMeans.length}`;
       draw();
-    }, 200);
+    }, stepInterval);
 
     // 自动停止
     setTimeout(() => {
       if (animTimer) { clearInterval(animTimer); animTimer = null; }
-    }, numSteps * 200);
+    }, numSteps * stepInterval);
   });
 
   resetBtn.addEventListener('click', () => {
