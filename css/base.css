@@ -50,6 +50,12 @@ body {
   color: var(--color-text-primary);
 }
 
+.btn-danger {
+  background: var(--color-error);
+  color: #ffffff;
+}
+.btn-danger:hover { background: #d32f2f; }
+
 .btn-full { width: 100%; }
 .btn-lg { padding: var(--spacing-md) var(--spacing-lg); font-size: var(--font-size-md); }
 

@@ -2,6 +2,7 @@
  * 侧边栏组件 —— 会话管理
  */
 import { truncateText, formatDate } from '../utils/formatters.js';
+import { Modal } from './modal.js';
 
 /**
  * 初始化侧边栏
@@ -73,9 +74,15 @@ export function initSidebar(chatStore) {
       deleteBtn.className = 'session-item-delete';
       deleteBtn.innerHTML = '✕';
       deleteBtn.title = '删除对话';
-      deleteBtn.addEventListener('click', (e) => {
+      deleteBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        if (confirm(`确定删除「${session.title}」？`)) {
+        const ok = await Modal.confirm({
+          title: '删除对话',
+          message: `确定删除「${session.title}」？`,
+          confirmText: '删除',
+          confirmClass: 'btn-danger',
+        });
+        if (ok) {
           chatStore.deleteSession(session.id);
         }
       });
@@ -94,10 +101,15 @@ export function initSidebar(chatStore) {
       });
 
       // 双击重命名
-      item.addEventListener('dblclick', () => {
-        const newTitle = prompt('重命名对话', session.title);
-        if (newTitle && newTitle.trim()) {
-          chatStore.renameSession(session.id, newTitle.trim());
+      item.addEventListener('dblclick', async () => {
+        const newTitle = await Modal.prompt({
+          title: '重命名对话',
+          defaultValue: session.title,
+          placeholder: '输入新名称',
+          confirmText: '保存',
+        });
+        if (newTitle) {
+          chatStore.renameSession(session.id, newTitle);
         }
       });
 
