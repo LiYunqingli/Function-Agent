@@ -1,6 +1,6 @@
 /**
- * 高数通 v1.0 — 主入口
- * 原生 HTML/CSS/JavaScript 实现的高等数学 AI 解题助手
+ * Function-Agent v1.0 — 主入口
+ * 原生 HTML/CSS/JavaScript 实现的 AI 智能助手
  */
 import { registerAllTools } from './tools/register-all.js';
 import { chatStore } from './stores/chat-store.js';
@@ -76,4 +76,4 @@ document.getElementById('welcome-new-chat')?.addEventListener('click', () => {
 // 初始检查
 updateWelcomeVisibility();
 
-console.log('📐 %c高数通 v1.0 已启动%c', 'font-size:18px;font-weight:bold', '');
+console.log('📐 %cFunction-Agent v1.0 已启动%c', 'font-size:18px;font-weight:bold', '');
