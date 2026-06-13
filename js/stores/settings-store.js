@@ -40,15 +40,25 @@ function sanitizeSettings(settings) {
   };
 }
 
+/**
+ * 用 saved 中的非空值覆盖 defaults，空字符串不覆盖
+ */
+function mergeWithDefaults(saved) {
+  const merged = { ...DEFAULT_SETTINGS };
+  for (const [key, value] of Object.entries(saved)) {
+    if (value !== null && value !== undefined && value !== '') {
+      merged[key] = value;
+    }
+  }
+  return merged;
+}
+
 class SettingsStore extends Store {
   constructor() {
     super();
     // 从 localStorage 加载，未找到则用默认值
-    const saved = storageAdapter.get(STORAGE_KEYS.SETTINGS) || {};
-    this._state = {
-      ...DEFAULT_SETTINGS,
-      ...sanitizeSettings(saved),
-    };
+    const saved = sanitizeSettings(storageAdapter.get(STORAGE_KEYS.SETTINGS) || {});
+    this._state = mergeWithDefaults(saved);
     // 每次状态变更后自动持久化
     this.subscribeAll(() => {
       this.saveToStorage();
@@ -59,8 +69,8 @@ class SettingsStore extends Store {
    * 从 localStorage 加载设置
    */
   loadFromStorage() {
-    const saved = storageAdapter.get(STORAGE_KEYS.SETTINGS) || {};
-    this._state = { ...DEFAULT_SETTINGS, ...sanitizeSettings(saved) };
+    const saved = sanitizeSettings(storageAdapter.get(STORAGE_KEYS.SETTINGS) || {});
+    this._state = mergeWithDefaults(saved);
   }
 
   /**

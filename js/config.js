@@ -16,7 +16,7 @@ export const LOCALSTORAGE_QUOTA = 5 * 1024 * 1024; // 5MB
 
 export const DEFAULT_SETTINGS = {
   // ── 大语言模型 ──
-  apiUrl: 'https://api.openai.com/v1',
+  apiUrl: 'https://api.deepseek.com',
   apiKey: '',
   model: 'deepseek-chat',
   temperature: 0.7,
