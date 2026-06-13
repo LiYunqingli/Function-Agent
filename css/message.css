@@ -257,6 +257,12 @@
   flex-direction: column;
 }
 
+/* ★ 非聚焦态：图表/画布不响应指针事件，滚轮穿透到页面原生滚动（无卡顿） */
+.tool-call-card:not(.focused) .plotly-container,
+.tool-call-card:not(.focused) .canvas-container {
+  pointer-events: none;
+}
+
 /* ★ 全屏时图表容器填满可用空间 */
 .tool-call-card.fullscreen .plotly-container {
   flex: 1 1 0;

@@ -147,28 +147,6 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
     }
   });
 
-  // ★ 核心：capture 阶段拦截 wheel，未聚焦时代理到页面滚动
-  card.addEventListener('wheel', (e) => {
-    // 全屏模式不放行（全屏时始终可交互）
-    if (card.classList.contains('fullscreen')) return;
-    if (isFocused) return; // 聚焦态：放行给 Plotly 缩放
-
-    // 非聚焦态：拦截并代理到聊天消息列表滚动
-    e.preventDefault();
-    e.stopPropagation();
-
-    // 定位滚动容器（优先 #message-list）
-    const scroller = document.getElementById('message-list') || document.scrollingElement;
-    if (!scroller) return;
-
-    // deltaY 兼容：deltaMode 0=pixels, 1=lines, 2=pages
-    let px = e.deltaY;
-    if (e.deltaMode === 1) px *= 18;   // 1 line ≈ 18px
-    if (e.deltaMode === 2) px *= scroller.clientHeight * 0.85;
-
-    scroller.scrollBy({ top: px, behavior: 'auto' });
-  }, { capture: true, passive: false });
-
   return card;
 }
 
