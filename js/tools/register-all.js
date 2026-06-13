@@ -15,6 +15,18 @@ import { executeAnimateRevolution } from './definitions/animate-revolution.js';
 import { executeShowStepCard } from './definitions/show-step-card.js';
 import { executeShowKnowledgeTip } from './definitions/show-knowledge-tip.js';
 import { executeControlSlider } from './definitions/control-slider.js';
+import { executePlotPolarCurve } from './definitions/plot-polar-curve.js';
+import { executePlotParametricCurve } from './definitions/plot-parametric-curve.js';
+import { executeAnimateSeriesConvergence } from './definitions/animate-series-convergence.js';
+import { executePlotFourierSeries } from './definitions/plot-fourier-series.js';
+import { executePlotMatrixTransform } from './definitions/plot-matrix-transform.js';
+import { executePlotEigenvectors } from './definitions/plot-eigenvectors.js';
+import { executePlotDistribution } from './definitions/plot-distribution.js';
+import { executeAnimateCLT } from './definitions/animate-clt.js';
+import { executePlotMultivariableIntegral } from './definitions/plot-multivariable-integral.js';
+import { executeShowComparisonTable } from './definitions/show-comparison-table.js';
+import { executeInteractiveQuiz } from './definitions/interactive-quiz.js';
+import { executePlotSequence } from './definitions/plot-sequence.js';
 
 /** 工具名 → 执行器映射 */
 const executors = {
@@ -30,6 +42,18 @@ const executors = {
   show_step_card: executeShowStepCard,
   show_knowledge_tip: executeShowKnowledgeTip,
   control_parameter_slider: executeControlSlider,
+  plot_polar_curve: executePlotPolarCurve,
+  plot_parametric_curve: executePlotParametricCurve,
+  animate_series_convergence: executeAnimateSeriesConvergence,
+  plot_fourier_series: executePlotFourierSeries,
+  plot_matrix_transform: executePlotMatrixTransform,
+  plot_eigenvectors: executePlotEigenvectors,
+  plot_distribution: executePlotDistribution,
+  animate_clt: executeAnimateCLT,
+  plot_multivariable_integral: executePlotMultivariableIntegral,
+  show_comparison_table: executeShowComparisonTable,
+  interactive_quiz: executeInteractiveQuiz,
+  plot_sequence: executePlotSequence,
 };
 
 /**

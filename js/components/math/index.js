@@ -20,6 +20,18 @@ const componentImporters = {
   'step-card': () => import('./step-card.js').then(m => m.renderStepCard),
   'knowledge-tip': () => import('./knowledge-tip.js').then(m => m.renderKnowledgeTip),
   'parameter-slider': () => import('./parameter-slider.js').then(m => m.renderParameterSlider),
+  'polar-curve': () => import('./polar-curve.js').then(m => m.renderPolarCurve),
+  'parametric-curve': () => import('./parametric-curve.js').then(m => m.renderParametricCurve),
+  'series-convergence': () => import('./series-convergence.js').then(m => m.renderSeriesConvergence),
+  'fourier-series': () => import('./fourier-series.js').then(m => m.renderFourierSeries),
+  'matrix-transform': () => import('./matrix-transform.js').then(m => m.renderMatrixTransform),
+  'eigenvectors': () => import('./eigenvectors.js').then(m => m.renderEigenvectors),
+  'distribution': () => import('./distribution.js').then(m => m.renderDistribution),
+  'clt-animation': () => import('./clt-animation.js').then(m => m.renderCLTAnimation),
+  'multivariable-integral': () => import('./multivariable-integral.js').then(m => m.renderMultivariableIntegral),
+  'comparison-table': () => import('./comparison-table.js').then(m => m.renderComparisonTable),
+  'interactive-quiz': () => import('./interactive-quiz.js').then(m => m.renderInteractiveQuiz),
+  'sequence': () => import('./sequence.js').then(m => m.renderSequence),
 };
 
 /**
