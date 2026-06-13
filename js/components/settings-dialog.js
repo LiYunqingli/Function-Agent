@@ -49,6 +49,11 @@ export function initSettingsDialog(settingsStore) {
 
   // 保存设置
   saveBtn.addEventListener('click', () => {
+    // 获取选中的命名方式
+    const titleModeRadio = document.querySelector('input[name="title-naming-mode"]:checked');
+    const titleNamingMode = titleModeRadio ? titleModeRadio.value : 'first-sentence';
+    const titleMaxLength = parseInt(document.getElementById('title-max-length').value, 10) || 15;
+
     const newSettings = {
       apiUrl: document.getElementById('api-url').value.trim(),
       apiKey: document.getElementById('api-key').value.trim(),
@@ -60,6 +65,8 @@ export function initSettingsDialog(settingsStore) {
       temperature: parseFloat(tempSlider.value),
       maxTokens: parseInt(document.getElementById('max-tokens').value, 10) || 4096,
       systemPrompt: document.getElementById('system-prompt').value,
+      titleNamingMode,
+      titleMaxLength,
     };
     _settingsStore.updateSettings(newSettings);
     dialog.style.display = 'none';
@@ -82,4 +89,9 @@ function loadFormFromStore() {
   document.getElementById('temp-val').textContent = state.temperature || 0.7;
   document.getElementById('max-tokens').value = state.maxTokens || 4096;
   document.getElementById('system-prompt').value = state.systemPrompt || '';
+  // 会话命名
+  const mode = state.titleNamingMode || 'first-sentence';
+  const modeRadio = document.querySelector(`input[name="title-naming-mode"][value="${mode}"]`);
+  if (modeRadio) modeRadio.checked = true;
+  document.getElementById('title-max-length').value = state.titleMaxLength || 15;
 }

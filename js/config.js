@@ -27,6 +27,9 @@ export const DEFAULT_SETTINGS = {
   visionApiKey: '',
   visionModel: 'qwen3.5-omni-plus-2026-03-15',
   visionSystemPrompt: '你是一个数学题目图片识别助手。请仔细观察图片中的数学题目内容，尽可能完整、准确地描述题目中的文字、公式、图形等信息。如果图片中包含数学公式，请用 LaTeX 格式表示。请直接返回题目描述，不要添加额外解释。',
+  // ── 会话命名 ──
+  titleNamingMode: 'first-sentence', // 'first-sentence' | 'ai'
+  titleMaxLength: 15,
   // ── 通用 ──
   theme: 'system',
 };

@@ -288,3 +288,64 @@ export async function createStream(messages, tools, settings, callbacks, signal)
   // ★ 无 finally 块 —— 生命周期（UI 解锁）由 runAI 的 finally 统一管理。
   //   createStream 职责单一：读取 SSE → 返回结果。绝不触碰 isStreaming / _sendLock。
 }
+
+/**
+ * 调用 LLM 为会话生成标题（非流式）
+ *
+ * @param {string} userMessage - 用户的第一条消息
+ * @param {string} assistantMessage - AI 的回复内容
+ * @param {Object} settings - { apiUrl, apiKey, model, titleMaxLength }
+ * @param {AbortSignal} signal
+ * @returns {Promise<string>} 生成的标题
+ */
+export async function generateTitle(userMessage, assistantMessage, settings, signal) {
+  const { apiUrl, apiKey, model, titleMaxLength = 15 } = settings;
+
+  const prompt = `请为以下对话生成一个简短标题（不超过${titleMaxLength}个字），直接返回标题文本，不要加引号、解释或标点符号。
+
+用户问题：${userMessage.slice(0, 200)}
+AI 回答摘要：${assistantMessage.slice(0, 300)}`;
+
+  const body = {
+    model,
+    messages: [
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.3,
+    max_tokens: 50,
+    stream: false,
+  };
+
+  console.log('[generateTitle] 发送标题生成请求: maxLength=%d', titleMaxLength);
+
+  const response = await fetch(`${apiUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[generateTitle] API 请求失败:', errorText);
+    return '';
+  }
+
+  const data = await response.json();
+  let title = data.choices?.[0]?.message?.content || '';
+  // 清理：去掉首尾空白、引号、多余标点
+  title = title.trim()
+    .replace(/^["'「『《]/, '')
+    .replace(/["'」』》]$/, '')
+    .replace(/[。，！？、；：]$/, '');
+  // 如果仍然超过限制，截断
+  if (title.length > titleMaxLength) {
+    title = title.slice(0, titleMaxLength);
+  }
+
+  console.log('[generateTitle] 生成标题: "%s"', title);
+  return title;
+}

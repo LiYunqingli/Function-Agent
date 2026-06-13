@@ -11,7 +11,7 @@
  */
 import { generateId } from '../utils/id.js';
 import { MAX_TOOL_DEPTH } from '../config.js';
-import { createStream, analyzeImages, fileToBase64 } from '../services/ai-client.js';
+import { createStream, analyzeImages, fileToBase64, generateTitle } from '../services/ai-client.js';
 import { registry } from '../tools/registry.js';
 import { executeToolCall } from '../tools/executor.js';
 
@@ -876,11 +876,84 @@ function compactMessages(messages) {
  */
 function _autoTitle(sessionId) {
   const session = _chatStore.getState().sessions.find((s) => s.id === sessionId);
-  if (session && (session.title === '新对话' || session.title === 'New Chat')) {
+  if (!session || (session.title !== '新对话' && session.title !== 'New Chat')) return;
+
+  const settings = _settingsStore.getState();
+  const namingMode = settings.titleNamingMode || 'first-sentence';
+
+  if (namingMode === 'ai' && settings.apiUrl && settings.apiKey) {
+    // AI 命名模式：异步调用 LLM 生成标题（不阻塞 UI）
+    _generateAITitle(sessionId);
+  } else {
+    // 首句截取模式（原有逻辑）
     const firstUserMsg = session.messages.find((m) => m.role === 'user');
     if (firstUserMsg) {
-      const title = firstUserMsg.content.slice(0, 30) + (firstUserMsg.content.length > 30 ? '...' : '');
+      const maxLen = settings.titleMaxLength || 15;
+      const title = firstUserMsg.content.slice(0, maxLen) + (firstUserMsg.content.length > maxLen ? '...' : '');
       _chatStore.renameSession(sessionId, title);
+    }
+  }
+}
+
+/**
+ * 调用 LLM 为会话生成标题（AI 命名模式）
+ * 在首轮对话结束后异步执行，不阻塞 UI
+ */
+async function _generateAITitle(sessionId) {
+  try {
+    const session = _chatStore.getState().sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+
+    const settings = _settingsStore.getState();
+    // 找到第一条用户消息和第一条 AI 回复
+    const userMsgs = session.messages.filter((m) => m.role === 'user');
+    const assistantMsgs = session.messages.filter((m) => m.role === 'assistant' && m.content && !m._isLocalError && !m._isVisionThinking);
+
+    if (userMsgs.length === 0) return;
+
+    const userContent = userMsgs[0].content || '';
+    const assistantContent = assistantMsgs.length > 0 ? (assistantMsgs[0].content || '') : '';
+
+    // 调用 LLM 生成标题
+    const abortController = new AbortController();
+    const title = await generateTitle(
+      userContent,
+      assistantContent,
+      {
+        apiUrl: settings.apiUrl,
+        apiKey: settings.apiKey,
+        model: settings.model,
+        titleMaxLength: settings.titleMaxLength || 15,
+      },
+      abortController.signal
+    );
+
+    // 确保会话仍然存在且标题未手动修改
+    const currentSession = _chatStore.getState().sessions.find((s) => s.id === sessionId);
+    if (currentSession && title && (currentSession.title === '新对话' || currentSession.title === 'New Chat')) {
+      _chatStore.renameSession(sessionId, title);
+    } else if (currentSession && !title) {
+      // AI 命名失败，回退到首句截取
+      console.warn('[generateAITitle] AI 标题生成失败，回退到首句截取');
+      const firstUserMsg = currentSession.messages.find((m) => m.role === 'user');
+      if (firstUserMsg) {
+        const maxLen = settings.titleMaxLength || 15;
+        const fallbackTitle = firstUserMsg.content.slice(0, maxLen) + (firstUserMsg.content.length > maxLen ? '...' : '');
+        _chatStore.renameSession(sessionId, fallbackTitle);
+      }
+    }
+  } catch (err) {
+    console.error('[generateAITitle] 标题生成异常:', err);
+    // 异常时回退到首句截取
+    const currentSession = _chatStore.getState().sessions.find((s) => s.id === sessionId);
+    if (currentSession && (currentSession.title === '新对话' || currentSession.title === 'New Chat')) {
+      const firstUserMsg = currentSession.messages.find((m) => m.role === 'user');
+      if (firstUserMsg) {
+        const settings = _settingsStore.getState();
+        const maxLen = settings.titleMaxLength || 15;
+        const fallbackTitle = firstUserMsg.content.slice(0, maxLen) + (firstUserMsg.content.length > maxLen ? '...' : '');
+        _chatStore.renameSession(sessionId, fallbackTitle);
+      }
     }
   }
 }
