@@ -89,6 +89,26 @@ welcomeNewChatBtn?.addEventListener('click', () => {
   document.getElementById('message-input')?.focus();
 });
 
+// 欢迎页功能卡片 —— 点击自动发送
+document.querySelectorAll('.feature-card[data-prompt]').forEach((card) => {
+  card.addEventListener('click', () => {
+    const prompt = card.getAttribute('data-prompt');
+    if (!prompt) return;
+
+    // 确保有活跃会话
+    if (!chatStore.getActiveSession()) {
+      chatStore.createSession();
+    }
+
+    // 填入提示词并发送
+    const input = document.getElementById('message-input');
+    if (input) {
+      input.value = prompt;
+      document.getElementById('send-btn')?.click();
+    }
+  });
+});
+
 // 初始检查
 updateWelcomeVisibility();
 
