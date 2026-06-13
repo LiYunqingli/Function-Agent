@@ -67,8 +67,24 @@ export function renderInteractiveQuiz(props) {
     const optionLabels = ['A', 'B', 'C', 'D', 'E', 'F'];
     (q.options || []).forEach((opt, optIdx) => {
       const optBtn = document.createElement('button');
-      optBtn.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border:1px solid var(--color-border-tertiary);border-radius:8px;background:var(--color-background-primary);cursor:pointer;font-size:14px;text-align:left;line-height:1.5;width:100%;transition:border-color 0.2s,color 0.2s;';
-      optBtn.innerHTML = `<span style="font-weight:500;min-width:20px;">${optionLabels[optIdx]}.</span><span>${opt}</span>`;
+      optBtn.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:8px 12px;border:1px solid var(--color-border-tertiary);border-radius:8px;background:var(--color-background-primary);color:var(--color-text-primary);cursor:pointer;font-size:14px;text-align:left;line-height:1.5;width:100%;transition:border-color 0.2s,background 0.2s,color 0.2s,box-shadow 0.2s;';
+      optBtn.innerHTML = `<span style="font-weight:500;min-width:20px;color:var(--color-text-primary);">${optionLabels[optIdx]}.</span><span style="color:var(--color-text-primary);">${opt}</span>`;
+
+      // 悬浮颜色反馈
+      optBtn.addEventListener('mouseenter', () => {
+        if (!optBtn.disabled) {
+          optBtn.style.borderColor = 'var(--color-primary, #1976d2)';
+          optBtn.style.background = 'rgba(25,118,210,0.06)';
+          optBtn.style.boxShadow = '0 0 0 2px rgba(25,118,210,0.12)';
+        }
+      });
+      optBtn.addEventListener('mouseleave', () => {
+        if (!optBtn.disabled) {
+          optBtn.style.borderColor = 'var(--color-border-tertiary)';
+          optBtn.style.background = 'var(--color-background-primary)';
+          optBtn.style.boxShadow = 'none';
+        }
+      });
 
       optBtn.addEventListener('click', () => {
         // 禁用所有选项
