@@ -17,6 +17,12 @@ export function initSidebar(chatStore) {
 
   // 新建对话
   newChatBtn.addEventListener('click', () => {
+    const activeSession = chatStore.getActiveSession();
+    if (activeSession && (!activeSession.messages || activeSession.messages.length === 0)) {
+      // 当前对话为空，不重复创建
+      document.getElementById('message-input')?.focus();
+      return;
+    }
     chatStore.createSession();
     // 移动端自动关闭侧边栏
     sidebar.classList.remove('open');
