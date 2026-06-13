@@ -50,7 +50,7 @@ initTopBar(settingsStore);
 initMessageList(chatStore, toolStore);
 const inputBarApi = initInputBar();
 initChatArea(chatStore, settingsStore, toolStore, inputBarApi);
-initSettingsDialog(settingsStore);
+initSettingsDialog(settingsStore, chatStore);
 
 // ===== 欢迎页面逻辑 =====
 const welcomePage = document.getElementById('welcome-page');

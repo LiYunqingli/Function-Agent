@@ -108,3 +108,38 @@
   color: var(--color-text-secondary);
   margin-top: var(--spacing-xs);
 }
+
+/* ── 数据管理操作区 ── */
+.setting-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.setting-actions-row {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.setting-actions-row .btn {
+  flex: 1;
+}
+
+/* ── 导入设置面板 ── */
+.import-panel {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-hover);
+}
+
+.import-panel .setting-field {
+  margin-bottom: var(--spacing-sm);
+}
+
+.import-panel textarea {
+  min-height: 80px;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--font-size-xs);
+}
