@@ -9,7 +9,7 @@ export function renderInteractiveQuiz(props) {
   const { title, questions = [] } = props;
 
   const container = document.createElement('div');
-  container.className = 'math-component fade-in';
+  container.className = 'math-component math-component--quiz fade-in';
 
   const header = document.createElement('div');
   header.className = 'math-component-header';
@@ -17,7 +17,7 @@ export function renderInteractiveQuiz(props) {
   container.appendChild(header);
 
   const body = document.createElement('div');
-  body.className = 'math-component-body';
+  body.className = 'math-component-body quiz-body';
 
   // 进度信息
   const progress = document.createElement('div');
