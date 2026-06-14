@@ -32,6 +32,11 @@ const componentImporters = {
   'comparison-table': () => import('./comparison-table.js').then(m => m.renderComparisonTable),
   'interactive-quiz': () => import('./interactive-quiz.js').then(m => m.renderInteractiveQuiz),
   'sequence': () => import('./sequence.js').then(m => m.renderSequence),
+  'formula-handbook': () => import('./formula-handbook.js').then(m => m.renderFormulaHandbook),
+  'flashcards': () => import('./flashcards.js').then(m => m.renderFlashcards),
+  'error-analyzer': () => import('./error-analyzer.js').then(m => m.renderErrorAnalyzer),
+  'interactive-proof': () => import('./interactive-proof.js').then(m => m.renderInteractiveProof),
+  'concept-map': () => import('./concept-map.js').then(m => m.renderConceptMap),
 };
 
 /**

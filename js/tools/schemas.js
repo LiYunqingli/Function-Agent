@@ -887,4 +887,213 @@ export const toolSchemas = [
       },
     },
   },
+
+  // 25. show_formula_handbook —— 公式手册
+  {
+    type: 'function',
+    function: {
+      name: 'show_formula_handbook',
+      description: '展示结构化的公式参考手册，支持按分类折叠和搜索过滤',
+      parameters: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            description: '公式手册标题',
+          },
+          sections: {
+            type: 'array',
+            description: '公式分类列表',
+            items: {
+              type: 'object',
+              properties: {
+                category: {
+                  type: 'string',
+                  description: '公式分类名称，如「导数公式」',
+                },
+                formulas: {
+                  type: 'array',
+                  description: '该分类下的公式列表',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string', description: '公式名称' },
+                      latex: { type: 'string', description: 'LaTeX 公式（将用 displayMode 渲染）' },
+                      description: { type: 'string', description: '公式说明（支持 LaTeX）' },
+                    },
+                    required: ['latex'],
+                  },
+                },
+              },
+              required: ['category', 'formulas'],
+            },
+          },
+        },
+        required: ['sections'],
+      },
+    },
+  },
+
+  // 26. show_error_analyzer —— 易错点分析
+  {
+    type: 'function',
+    function: {
+      name: 'show_error_analyzer',
+      description: '展示常见数学错误模式，以左右对比卡片形式呈现错误写法与正确写法，附解析说明',
+      parameters: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            description: '易错点分析标题（默认"易错点分析"）',
+          },
+          errors: {
+            type: 'array',
+            description: '易错点列表',
+            items: {
+              type: 'object',
+              properties: {
+                wrongExpression: { type: 'string', description: '错误表达式（LaTeX）' },
+                correctExpression: { type: 'string', description: '正确表达式（LaTeX）' },
+                wrongName: { type: 'string', description: '错误名称/标签（可选）' },
+                correctName: { type: 'string', description: '正确名称/标签（可选）' },
+                explanation: { type: 'string', description: '解释说明（支持 LaTeX）' },
+                severity: {
+                  type: 'string',
+                  enum: ['critical', 'warning', 'info'],
+                  description: '严重程度：critical=严重, warning=警告, info=提酗',
+                },
+              },
+              required: ['wrongExpression', 'correctExpression'],
+            },
+          },
+        },
+        required: ['errors'],
+      },
+    },
+  },
+
+  // 27. show_flashcards —— 抽认卡（间隔重复）
+  {
+    type: 'function',
+    function: {
+      name: 'show_flashcards',
+      description: '展示交互式抽认卡，支持正面/背面翻转、间隔重复追踪。适用于记忆公式、定义、定理等',
+      parameters: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            description: '抽认卡标题',
+          },
+          cards: {
+            type: 'array',
+            description: '卡片列表',
+            items: {
+              type: 'object',
+              properties: {
+                front: { type: 'string', description: '卡片正面内容（支持 LaTeX）' },
+                back: { type: 'string', description: '卡片背面内容（支持 LaTeX）' },
+                category: { type: 'string', description: '卡片分类/标签（可选）' },
+              },
+              required: ['front', 'back'],
+            },
+          },
+        },
+        required: ['cards'],
+      },
+    },
+  },
+
+  // 28. show_interactive_proof —— 交互式证明
+  {
+    type: 'function',
+    function: {
+      name: 'show_interactive_proof',
+      description: '展示定理证明步骤，支持折叠/展开查看每步的详细推导过程',
+      parameters: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            description: '证明标题',
+          },
+          theorem: {
+            type: 'string',
+            description: '定理陈述（支持 LaTeX）',
+          },
+          proofSteps: {
+            type: 'array',
+            description: '证明步骤列表',
+            items: {
+              type: 'object',
+              properties: {
+                stepNumber: {
+                  type: 'number',
+                  description: '步骤编号（可选，默认按顺序递增）',
+                },
+                statement: {
+                  type: 'string',
+                  description: '步骤陈述（支持 LaTeX）',
+                },
+                derivation: {
+                  type: 'string',
+                  description: '推导说明（支持 LaTeX，折叠查看）',
+                },
+                formula: {
+                  type: 'string',
+                  description: '公式（LaTeX，displayMode 渲染，折叠查看）',
+                },
+                hint: {
+                  type: 'string',
+                  description: '提示文字（可选，折叠查看）',
+                },
+              },
+              required: ['statement'],
+            },
+          },
+        },
+        required: ['proofSteps'],
+      },
+    },
+  },
+
+  // 29. show_concept_map —— 知识概念图
+  {
+    type: 'function',
+    function: {
+      name: 'show_concept_map',
+      description: '展示知识概念图，以节点和依赖边呈现概念间的前置关系',
+      parameters: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            description: '概念图标题',
+          },
+          concepts: {
+            type: 'array',
+            description: '概念列表',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'string', description: '概念唯一标识' },
+                name: { type: 'string', description: '概念名称' },
+                category: { type: 'string', description: '分类，如 微积分、线性代数、概率统计、基础' },
+                description: { type: 'string', description: '概念描述（支持 LaTeX）' },
+                dependsOn: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: '前置知识的 id 列表',
+                },
+                level: { type: 'number', description: '层级（可选，自动拓扑排序计算）' },
+              },
+              required: ['id'],
+            },
+          },
+        },
+        required: ['concepts'],
+      },
+    },
+  },
 ];

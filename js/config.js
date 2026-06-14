@@ -13,6 +13,7 @@ export const STORAGE_KEYS = {
   ACTIVE_SESSION_ID: 'gaoshu_active_session_id',
   SETTINGS: 'gaoshu_settings',
   THEME: 'gaoshu_theme',
+  FAVORITES: 'gaoshu_favorites',
 };
 
 export const MAX_TOOL_DEPTH = 25;
@@ -71,6 +72,12 @@ export const TOOL_COMPONENT_MAP = {
   show_comparison_table: 'comparison-table',
   interactive_quiz: 'interactive-quiz',
   plot_sequence: 'sequence',
+  // 新增组件
+  show_formula_handbook: 'formula-handbook',
+  show_flashcards: 'flashcards',
+  show_error_analyzer: 'error-analyzer',
+  show_interactive_proof: 'interactive-proof',
+  show_concept_map: 'concept-map',
 };
 
 /**
@@ -101,4 +108,10 @@ export const TOOL_ICONS = {
   show_comparison_table: '⚖️',
   interactive_quiz: '🧩',
   plot_sequence: '🔢',
+  // 新增工具图标
+  show_formula_handbook: '📖',
+  show_flashcards: '📇',
+  show_error_analyzer: '⚠️',
+  show_interactive_proof: '📜',
+  show_concept_map: '🗺️',
 };

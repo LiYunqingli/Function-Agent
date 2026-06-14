@@ -27,6 +27,11 @@ import { executePlotMultivariableIntegral } from './definitions/plot-multivariab
 import { executeShowComparisonTable } from './definitions/show-comparison-table.js';
 import { executeInteractiveQuiz } from './definitions/interactive-quiz.js';
 import { executePlotSequence } from './definitions/plot-sequence.js';
+import { executeShowFormulaHandbook } from './definitions/show-formula-handbook.js';
+import { executeShowFlashcards } from './definitions/show-flashcards.js';
+import { executeShowErrorAnalyzer } from './definitions/show-error-analyzer.js';
+import { executeShowInteractiveProof } from './definitions/show-interactive-proof.js';
+import { executeShowConceptMap } from './definitions/show-concept-map.js';
 
 /** 工具名 → 执行器映射 */
 const executors = {
@@ -54,6 +59,11 @@ const executors = {
   show_comparison_table: executeShowComparisonTable,
   interactive_quiz: executeInteractiveQuiz,
   plot_sequence: executePlotSequence,
+  show_formula_handbook: executeShowFormulaHandbook,
+  show_flashcards: executeShowFlashcards,
+  show_error_analyzer: executeShowErrorAnalyzer,
+  show_interactive_proof: executeShowInteractiveProof,
+  show_concept_map: executeShowConceptMap,
 };
 
 /**

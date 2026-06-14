@@ -30,6 +30,8 @@ export const DEFAULT_TOOLS_LIST = `你可以调用以下工具来辅助解题与
 - render_latex          渲染 LaTeX 数学公式，支持分步展示
 - show_step_card        展示结构化的解题步骤卡片
 - show_knowledge_tip    弹出知识点提示框，适合补充定义/定理
+- show_interactive_proof 交互式证明展示，步骤可展开/折叠，适合展示定理推导过程
+- show_formula_handbook  公式手册速查卡，按分类展示常用公式，支持搜索与折叠
 
 【函数与图形】
 - plot_function         绘制一个或多个函数图像（支持切线、积分区域叠加）
@@ -68,7 +70,12 @@ export const DEFAULT_TOOLS_LIST = `你可以调用以下工具来辅助解题与
   · true-false（判断题）— 提供 correctBool（true/false）
   · fill-blank（填空题）— 提供 acceptableAnswers 可接受答案数组
   · subjective（主观题）— 提供 referenceAnswer 和 rubric（可选）
-  注意：questions 数组中每题必须包含 type 字段指定题型，可混合出题。`;
+  注意：questions 数组中每题必须包含 type 字段指定题型，可混合出题。
+
+【记忆与辅助】
+- show_flashcards      抽认卡工具，正反面翻转，支持间隔重复记忆，适合公式/定义背诵
+- show_error_analyzer  易错点分析，展示常见错误写法与正确写法的对比，帮助规避典型错误
+- show_concept_map     知识概念图，展示知识点之间的依赖关系，支持点击查看详情`;
 
 /**
  * 【注意事项】LLM 在回复时必须遵守的行为规范
