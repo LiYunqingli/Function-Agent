@@ -132,6 +132,155 @@
   margin-bottom: var(--spacing-sm);
 }
 
+.message-bubble li {
+  margin-bottom: 4px;
+}
+
+.message-bubble li > ul,
+.message-bubble li > ol {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+/* AI消息中的表格 */
+.message-bubble table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.message-bubble thead {
+  background: var(--color-bg-hover);
+}
+
+.message-bubble th {
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  border: 1px solid var(--color-border-tertiary, var(--color-border, rgba(128,128,128,0.2)));
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.message-bubble td {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border-tertiary, var(--color-border, rgba(128,128,128,0.2)));
+  word-break: break-word;
+}
+
+.message-bubble tbody tr:nth-child(even) {
+  background: var(--color-bg-hover);
+}
+
+.message-bubble tbody tr:hover {
+  background: var(--color-bg-active, rgba(0,0,0,0.06));
+}
+
+/* AI消息中的标题 */
+.message-bubble h1, .message-bubble h2, .message-bubble h3, .message-bubble h4,
+.message-bubble h5, .message-bubble h6 {
+  margin: 14px 0 6px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.message-bubble h1 { font-size: 1.25em; }
+.message-bubble h2 { font-size: 1.15em; }
+.message-bubble h3 { font-size: 1.05em; }
+.message-bubble h4 { font-size: 1em; }
+
+/* AI消息中的引用块 */
+.message-bubble blockquote {
+  margin: 8px 0;
+  padding: 6px 14px;
+  border-left: 3px solid var(--color-accent, #1976d2);
+  background: var(--color-bg-hover);
+  border-radius: 0 6px 6px 0;
+  color: var(--color-text-secondary);
+}
+
+.message-bubble blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* AI消息中的分隔线 */
+.message-bubble hr {
+  border: none;
+  border-top: 1px solid var(--color-border, rgba(128,128,128,0.2));
+  margin: 12px 0;
+}
+
+/* AI消息中的加粗/斜体 */
+.message-bubble strong {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.message-bubble em {
+  font-style: italic;
+}
+
+/* AI消息中的删除线 */
+.message-bubble del,
+.message-bubble s {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* AI消息中的链接 */
+.message-bubble a {
+  color: var(--color-accent, #1976d2);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.message-bubble a:hover {
+  border-bottom-color: var(--color-accent, #1976d2);
+}
+
+/* AI消息中的图片 */
+.message-bubble img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+/* AI消息中的代码块（pre） */
+.message-bubble pre {
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-bg-code, rgba(0,0,0,0.04));
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.message-bubble pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: 1em;
+}
+
+/* AI消息中的任务列表（GFM checkbox） */
+.message-bubble input[type="checkbox"] {
+  margin-right: 6px;
+  accent-color: var(--color-accent, #1976d2);
+  vertical-align: middle;
+}
+
+.message-bubble li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: -20px;
+  padding-left: 4px;
+}
+
 /* 行内代码 */
 .message-bubble code:not(pre code) {
   background: var(--color-bg-hover);
@@ -933,4 +1082,125 @@
   background: var(--color-bg-hover);
   font-family: var(--font-mono, monospace);
   font-size: 0.9em;
+}
+
+/* ── Quiz 面板内表格 ── */
+.quiz-grading-content table,
+.quiz-ai-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.quiz-grading-content thead,
+.quiz-ai-content thead {
+  background: var(--color-bg-hover);
+}
+
+.quiz-grading-content th,
+.quiz-ai-content th {
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  border: 1px solid var(--color-border-tertiary, var(--color-border, rgba(128,128,128,0.2)));
+  color: var(--color-text-primary);
+}
+
+.quiz-grading-content td,
+.quiz-ai-content td {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border-tertiary, var(--color-border, rgba(128,128,128,0.2)));
+  word-break: break-word;
+}
+
+.quiz-grading-content tbody tr:nth-child(even),
+.quiz-ai-content tbody tr:nth-child(even) {
+  background: var(--color-bg-hover);
+}
+
+.quiz-grading-content blockquote,
+.quiz-ai-content blockquote {
+  margin: 8px 0;
+  padding: 6px 14px;
+  border-left: 3px solid var(--color-accent, #1976d2);
+  background: var(--color-bg-hover);
+  border-radius: 0 6px 6px 0;
+  color: var(--color-text-secondary);
+}
+
+.quiz-grading-content hr,
+.quiz-ai-content hr {
+  border: none;
+  border-top: 1px solid var(--color-border, rgba(128,128,128,0.2));
+  margin: 12px 0;
+}
+
+/* ── Quiz 面板内其余 Markdown 元素 ── */
+.quiz-grading-content em,
+.quiz-ai-content em {
+  font-style: italic;
+}
+
+.quiz-grading-content del,
+.quiz-ai-content del,
+.quiz-grading-content s,
+.quiz-ai-content s {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.quiz-grading-content a,
+.quiz-ai-content a {
+  color: var(--color-accent, #1976d2);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.quiz-grading-content a:hover,
+.quiz-ai-content a:hover {
+  border-bottom-color: var(--color-accent, #1976d2);
+}
+
+.quiz-grading-content img,
+.quiz-ai-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+}
+
+.quiz-grading-content pre,
+.quiz-ai-content pre {
+  margin: 10px 0;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--color-bg-code, rgba(0,0,0,0.04));
+  overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.quiz-grading-content pre code,
+.quiz-ai-content pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: 1em;
+}
+
+.quiz-grading-content input[type="checkbox"],
+.quiz-ai-content input[type="checkbox"] {
+  margin-right: 6px;
+  accent-color: var(--color-accent, #1976d2);
+  vertical-align: middle;
+}
+
+.quiz-grading-content li:has(> input[type="checkbox"]),
+.quiz-ai-content li:has(> input[type="checkbox"]) {
+  list-style: none;
+  margin-left: -20px;
+  padding-left: 4px;
 }
