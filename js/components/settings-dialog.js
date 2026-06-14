@@ -173,6 +173,13 @@ export function initSettingsDialog(settingsStore, chatStore) {
 
   // 打开设置
   openBtn.addEventListener('click', () => {
+    // 关闭收藏面板
+    const favPanel = document.getElementById('favorites-panel');
+    const favOverlay = document.getElementById('favorites-overlay');
+    if (favPanel) favPanel.classList.remove('open');
+    if (favOverlay) favOverlay.classList.remove('active');
+    document.body.style.overflow = '';
+
     loadFormFromStore();
     dialog.style.display = 'flex';
   });

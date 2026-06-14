@@ -11,11 +11,15 @@ import { initTopBar } from './components/top-bar.js';
 import { initChatArea } from './components/chat-area.js';
 import { initMessageList } from './components/message-list.js';
 import { initInputBar } from './components/input-bar.js';
+import { initMathSymbolKeyboard } from './components/math-symbol-keyboard.js';
 import { initSettingsDialog } from './components/settings-dialog.js';
+import { initLearningStatsPanel } from './components/learning-stats-panel.js';
+import { initFavoritesPanel } from './components/favorites-panel.js';
+import { learningStatsStore } from './stores/learning-stats-store.js';
 
 // ===== 注册所有工具 =====
 registerAllTools();
-console.log('🔧 已注册 %c12 个工具%c', 'font-weight:bold', '');
+console.log('🔧 已注册 %c29 个工具%c', 'font-weight:bold', '');
 
 // ===== 初始化主题 =====
 applyTheme(settingsStore.getState().theme);
@@ -49,8 +53,11 @@ initSidebar(chatStore);
 initTopBar(settingsStore);
 initMessageList(chatStore, toolStore);
 const inputBarApi = initInputBar();
+initMathSymbolKeyboard(inputBarApi);
 initChatArea(chatStore, settingsStore, toolStore, inputBarApi);
 initSettingsDialog(settingsStore, chatStore);
+initLearningStatsPanel(learningStatsStore);
+initFavoritesPanel(chatStore);
 
 // ===== 欢迎页面逻辑 =====
 const welcomePage = document.getElementById('welcome-page');
@@ -112,4 +119,4 @@ document.querySelectorAll('.feature-card[data-prompt]').forEach((card) => {
 // 初始检查
 updateWelcomeVisibility();
 
-console.log('📐 %cFunction-Agent v1.0 已启动%c', 'font-size:18px;font-weight:bold', '');
+console.log('📐 %cFunction-Agent v1.1 已启动%c', 'font-size:18px;font-weight:bold', '');

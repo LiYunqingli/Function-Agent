@@ -13,9 +13,10 @@ let _activeFullscreen = null;
  * @param {Object} toolCall - { id, type: 'function', function: { name, arguments } }
  * @param {Object|null} toolResult - { status, componentType, props, error? }
  * @param {Object} toolStore - ToolStore 单例
+ * @param {Object} chatStore - ChatStore 单例
  * @returns {HTMLElement}
  */
-export function createToolCallCard(toolCall, toolResult, toolStore) {
+export function createToolCallCard(toolCall, toolResult, toolStore, chatStore) {
   const card = document.createElement('div');
   card.className = 'tool-call-card fade-in';
   card.dataset.toolCallId = toolCall.id;
@@ -39,6 +40,54 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
   const statusBadge = document.createElement('span');
   statusBadge.className = 'tool-call-status';
 
+  // 收藏按钮
+  const favBtn = document.createElement('button');
+  favBtn.className = 'fav-btn';
+  favBtn.title = '收藏此工具调用结果';
+  favBtn.textContent = '☆';
+  favBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!chatStore) return;
+
+    if (chatStore.isFavorite(toolCall.id)) {
+      chatStore.removeFavoriteByMessageId(toolCall.id);
+      favBtn.classList.remove('active');
+      favBtn.textContent = '☆';
+    } else {
+      const session = chatStore.getActiveSession();
+      if (!session) return;
+
+      // 从工具结果中提取标题信息
+      let title = `工具: ${formatToolName(toolName)}`;
+      let preview = `工具调用结果 - ${formatToolName(toolName)}`;
+
+      // 尝试从 toolResult props 中提取有意义的标题
+      if (toolResult && toolResult.props) {
+        const p = toolResult.props;
+        if (p.title) title = String(p.title);
+        if (p.question) preview = String(p.question);
+        else if (p.function) preview = `f(x) = ${p.function}`;
+        else if (p.sections) preview = `${(p.sections || []).length} 个公式分类`;
+        else if (p.cards) preview = `${(p.cards || []).length} 张卡片`;
+        else if (p.errors) preview = `${(p.errors || []).length} 个易错点`;
+        else if (p.proofSteps) preview = `${(p.proofSteps || []).length} 步证明`;
+        else if (p.concepts) preview = `${(p.concepts || []).length} 个概念节点`;
+        else if (p.theorem) preview = String(p.theorem);
+        else if (p.functionExpression) preview = `f(x) = ${p.functionExpression}`;
+      }
+
+      chatStore.addFavorite(session.id, toolCall.id, 'toolCall', title, preview);
+      favBtn.classList.add('active');
+      favBtn.textContent = '★';
+    }
+  });
+
+  // 初始化收藏状态
+  if (chatStore && chatStore.isFavorite(toolCall.id)) {
+    favBtn.classList.add('active');
+    favBtn.textContent = '★';
+  }
+
   // 全屏按钮（仅成功结果时显示）
   const fullscreenBtn = document.createElement('button');
   fullscreenBtn.className = 'tool-call-fullscreen-btn';
@@ -49,6 +98,7 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
   header.appendChild(iconSpan);
   header.appendChild(nameSpan);
   header.appendChild(statusBadge);
+  header.appendChild(favBtn);
   header.appendChild(fullscreenBtn);
   card.appendChild(header);
 

@@ -33,6 +33,15 @@ export function initSidebar(chatStore) {
 
   // 移动端侧边栏切换
   sidebarToggle.addEventListener('click', () => {
+    // 如果收藏面板打开，先关闭它
+    const favPanel = document.getElementById('favorites-panel');
+    const favOverlay = document.getElementById('favorites-overlay');
+    if (favPanel && favPanel.classList.contains('open')) {
+      favPanel.classList.remove('open');
+      if (favOverlay) favOverlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
     sidebar.classList.toggle('open');
     sidebarOverlay.classList.toggle('active');
   });

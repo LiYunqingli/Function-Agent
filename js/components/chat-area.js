@@ -14,6 +14,7 @@ import { MAX_TOOL_DEPTH } from '../config.js';
 import { createStream, analyzeImages, fileToBase64, generateTitle } from '../services/ai-client.js';
 import { registry } from '../tools/registry.js';
 import { executeToolCall } from '../tools/executor.js';
+import { learningStatsStore } from '../stores/learning-stats-store.js';
 
 /** @type {Object} chatStore 引用（由 initChatArea 注入） */
 let _chatStore = null;
@@ -117,6 +118,7 @@ async function handleSend() {
   let session = _chatStore.getActiveSession();
   if (!session) {
     session = _chatStore.createSession();
+    learningStatsStore.recordSession();
   }
   const sessionId = _chatStore.getState().activeSessionId;
 
@@ -459,6 +461,8 @@ async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null,
 
         if (result.status === 'success') {
           _toolStore.completeExecution(tc.id, result);
+          // 记录工具使用到学习统计
+          learningStatsStore.recordToolUsage(tc.function.name);
         } else {
           _toolStore.failExecution(tc.id, result.error);
         }

@@ -94,14 +94,18 @@ export function createMessageBubble(message, toolStore, chatStore) {
       for (const tc of message.toolCalls) {
         // 查找对应的工具结果
         const toolResult = findToolResult(message, tc.id, toolStore, chatStore);
-        const card = createToolCallCard(tc, toolResult, toolStore);
+        const card = createToolCallCard(tc, toolResult, toolStore, chatStore);
         wrapper.appendChild(card);
       }
     }
 
-    // 复制按钮
+    // 复制按钮 & 收藏按钮
     const actions = document.createElement('div');
     actions.className = 'message-actions';
+
+    const favBtn = createFavBtn(message.id, chatStore);
+    actions.appendChild(favBtn);
+
     const copyBtn = document.createElement('button');
     copyBtn.className = 'copy-btn';
     copyBtn.textContent = '复制';
@@ -250,4 +254,48 @@ function findToolResult(assistantMessage, toolCallId, toolStore, chatStore) {
   }
 
   return null;
+}
+
+/**
+ * 创建收藏按钮
+ * @param {string} messageId - 消息 ID
+ * @param {Object} chatStore - ChatStore 单例
+ * @returns {HTMLElement}
+ */
+function createFavBtn(messageId, chatStore) {
+  const btn = document.createElement('button');
+  btn.className = 'fav-btn';
+  btn.title = '收藏';
+  btn.textContent = '☆';
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!chatStore) return;
+
+    if (chatStore.isFavorite(messageId)) {
+      chatStore.removeFavoriteByMessageId(messageId);
+    } else {
+      // 获取消息信息和当前会话
+      const session = chatStore.getActiveSession();
+      if (!session) return;
+      const msg = session.messages.find((m) => m.id === messageId);
+      if (!msg) return;
+
+      const preview = truncateText((msg.content || '').replace(/\\n/g, ' '), 80);
+      const title = truncateText((msg.content || '').replace(/\\n/g, ' '), 30) || '(助手消息)';
+      chatStore.addFavorite(session.id, messageId, 'message', title, preview);
+    }
+  });
+
+  // 初始化状态
+  if (chatStore && chatStore.isFavorite(messageId)) {
+    btn.classList.add('active');
+    btn.textContent = '★';
+  }
+
+  return btn;
+}
+
+function truncateText(text, maxLen) {
+  if (!text || text.length <= maxLen) return text || '';
+  return text.slice(0, maxLen) + '...';
 }

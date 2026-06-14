@@ -68,6 +68,7 @@ class ChatStore extends Store {
       activeSessionId: null,
       isStreaming: false,
       abortController: null,
+      favorites: [],
     };
     // 从 localStorage 加载
     this.loadFromStorage();
@@ -79,11 +80,12 @@ class ChatStore extends Store {
   }
 
   /**
-   * 从 localStorage 加载会话数据
+   * 从 localStorage 加载会话数据和收藏
    */
   loadFromStorage() {
     const sessions = storageAdapter.get(STORAGE_KEYS.SESSIONS) || [];
     const activeId = storageAdapter.get(STORAGE_KEYS.ACTIVE_SESSION_ID) || null;
+    const favorites = storageAdapter.get(STORAGE_KEYS.FAVORITES) || [];
     // 限制最大会话数
     if (sessions.length > MAX_SESSIONS) {
       sessions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
@@ -91,6 +93,7 @@ class ChatStore extends Store {
     }
     this._state.sessions = sessions.map(sanitizeSession);
     this._state.activeSessionId = activeId;
+    this._state.favorites = favorites;
   }
 
   /**
@@ -100,6 +103,79 @@ class ChatStore extends Store {
     const sessions = this._state.sessions.map(sanitizeSession);
     storageAdapter.set(STORAGE_KEYS.SESSIONS, sessions);
     storageAdapter.set(STORAGE_KEYS.ACTIVE_SESSION_ID, this._state.activeSessionId);
+    storageAdapter.set(STORAGE_KEYS.FAVORITES, this._state.favorites);
+  }
+
+  // ══════════════════════════════════════════
+  //  收藏功能
+  // ══════════════════════════════════════════
+
+  /**
+   * 添加收藏
+   * @param {string} sessionId - 所属会话 ID
+   * @param {string} messageId - 消息 ID
+   * @param {'message'|'toolCall'} type - 收藏类型
+   * @param {string} title - 标题文本
+   * @param {string} preview - 预览文本
+   */
+  addFavorite(sessionId, messageId, type, title, preview) {
+    const existing = this._state.favorites.find((f) => f.messageId === messageId);
+    if (existing) return; // 已收藏，不重复添加
+
+    const favorite = {
+      id: generateId(),
+      sessionId,
+      messageId,
+      type,
+      title,
+      preview: preview || '',
+      createdAt: new Date().toISOString(),
+    };
+    this.setState({ favorites: [...this._state.favorites, favorite] });
+  }
+
+  /**
+   * 删除收藏
+   * @param {string} favoriteId - 收藏 ID
+   */
+  removeFavorite(favoriteId) {
+    const favorites = this._state.favorites.filter((f) => f.id !== favoriteId);
+    this.setState({ favorites });
+  }
+
+  /**
+   * 根据消息 ID 删除收藏
+   * @param {string} messageId - 消息 ID
+   */
+  removeFavoriteByMessageId(messageId) {
+    const favorites = this._state.favorites.filter((f) => f.messageId !== messageId);
+    this.setState({ favorites });
+  }
+
+  /**
+   * 获取所有收藏
+   * @returns {Array}
+   */
+  getFavorites() {
+    return this._state.favorites;
+  }
+
+  /**
+   * 检查某个消息是否已收藏
+   * @param {string} messageId - 消息 ID
+   * @returns {boolean}
+   */
+  isFavorite(messageId) {
+    return this._state.favorites.some((f) => f.messageId === messageId);
+  }
+
+  /**
+   * 根据消息 ID 获取收藏对象
+   * @param {string} messageId
+   * @returns {Object|null}
+   */
+  getFavoriteByMessageId(messageId) {
+    return this._state.favorites.find((f) => f.messageId === messageId) || null;
   }
 
   /**
@@ -134,7 +210,9 @@ class ChatStore extends Store {
     if (activeSessionId === id) {
       activeSessionId = sessions.length > 0 ? sessions[0].id : null;
     }
-    this.setState({ sessions, activeSessionId });
+    // 清理该会话下的所有收藏
+    const favorites = this._state.favorites.filter((f) => f.sessionId !== id);
+    this.setState({ sessions, activeSessionId, favorites });
   }
 
   /**
