@@ -62,7 +62,13 @@ export const DEFAULT_TOOLS_LIST = `你可以调用以下工具来辅助解题与
 
 【对比与测验】
 - show_comparison_table 生成方法/公式对比表格
-- interactive_quiz      交互式单选题测验（含解析）`;
+- interactive_quiz      交互式测验，支持五种题型混合出题：
+  · single（单选题）— 提供 options 数组和 correctAnswer 索引
+  · multiple（多选题）— 提供 options 数组和 correctAnswers 索引数组
+  · true-false（判断题）— 提供 correctBool（true/false）
+  · fill-blank（填空题）— 提供 acceptableAnswers 可接受答案数组
+  · subjective（主观题）— 提供 referenceAnswer 和 rubric（可选）
+  注意：questions 数组中每题必须包含 type 字段指定题型，可混合出题。`;
 
 /**
  * 【注意事项】LLM 在回复时必须遵守的行为规范
@@ -73,7 +79,7 @@ export const DEFAULT_GUIDELINES = `在解答过程中，请严格遵守以下规
 2. **格式简洁**：避免过多使用水平分隔线（---）来切割上下文，保持阅读流畅。
 3. **适时可视化**：遇到图形、函数、向量、概率分布等内容时，主动调用对应可视化工具辅助解释，不要仅靠文字描述。
 4. **合理使用工具**：不要为了使用工具而滥用工具；简单问题（如纯文字解释）无需强行调用工具。
-5. **测验优先选择题**：若用户要求出题或需要生成练习题，优先使用 interactive_quiz（交互式选择题）工具，题型为单选题并附带详细解析。
+5. **测验支持多题型**：若用户要求出题或生成练习题，优先使用 interactive_quiz 工具。支持五种题型（单选/多选/判断/填空/主观），可在同一测验中混合使用，每题必须包含 type 字段。建议以客观题（单选/判断/填空）为主，搭配少量主观题考查理解深度。
 6. 调用工具时，参数需完整、合法，确保前端组件能正确渲染。`;
 
 /**

@@ -804,12 +804,12 @@ export const toolSchemas = [
     },
   },
 
-  // 23. interactive_quiz —— 交互式小测验
+  // 23. interactive_quiz —— 交互式小测验（支持多题型）
   {
     type: 'function',
     function: {
       name: 'interactive_quiz',
-      description: '生成交互式选择题测验，用户点击选项后即时反馈对错和解析',
+      description: '生成交互式测验，支持单选题、多选题、判断题、填空题和主观题，可混合出题。用户作答后即时反馈，底部支持 AI 阅卷分析薄弱点',
       parameters: {
         type: 'object',
         properties: {
@@ -819,16 +819,31 @@ export const toolSchemas = [
           },
           questions: {
             type: 'array',
-            description: '题目列表',
+            description: '题目列表（可混合不同 type）',
             items: {
               type: 'object',
               properties: {
+                type: {
+                  type: 'string',
+                  enum: ['single', 'multiple', 'true-false', 'fill-blank', 'subjective'],
+                  description: '题型：single=单选, multiple=多选, true-false=判断, fill-blank=填空, subjective=主观',
+                },
                 question: { type: 'string', description: '题目内容（支持 LaTeX）' },
-                options: { type: 'array', items: { type: 'string' }, description: '选项列表' },
-                correctAnswer: { type: 'number', description: '正确答案索引（从 0 开始）' },
-                explanation: { type: 'string', description: '答案解析' },
+                // 单选题 / 多选题
+                options: { type: 'array', items: { type: 'string' }, description: '选项列表（单选/多选题必填）' },
+                correctAnswer: { type: 'number', description: '正确答案索引（单选题，从 0 开始）' },
+                correctAnswers: { type: 'array', items: { type: 'number' }, description: '正确答案索引数组（多选题，从 0 开始）' },
+                // 判断题
+                correctBool: { type: 'boolean', description: '判断题正确答案：true 或 false' },
+                // 填空题
+                acceptableAnswers: { type: 'array', items: { type: 'string' }, description: '填空题可接受的答案列表（不区分大小写匹配）' },
+                // 主观题
+                referenceAnswer: { type: 'string', description: '主观题参考答案' },
+                rubric: { type: 'string', description: '主观题评分标准/要点' },
+                // 通用
+                explanation: { type: 'string', description: '答案解析（所有题型通用）' },
               },
-              required: ['question', 'options', 'correctAnswer'],
+              required: ['type', 'question'],
             },
           },
         },
