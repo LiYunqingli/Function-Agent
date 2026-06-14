@@ -7,6 +7,8 @@ import { renderMarkdown } from './markdown-renderer.js';
 import { createToolCallCard } from './tool-call-card.js';
 import { formatDate } from '../utils/formatters.js';
 import { escapeHtml } from '../utils/helpers.js';
+import { settingsStore } from '../stores/settings-store.js';
+import { generateFavoriteTitle } from '../services/ai-client.js';
 
 /**
  * 创建消息气泡 DOM 元素
@@ -273,6 +275,8 @@ function createFavBtn(messageId, chatStore) {
 
     if (chatStore.isFavorite(messageId)) {
       chatStore.removeFavoriteByMessageId(messageId);
+      btn.classList.remove('active');
+      btn.textContent = '☆';
     } else {
       // 获取消息信息和当前会话
       const session = chatStore.getActiveSession();
@@ -280,9 +284,36 @@ function createFavBtn(messageId, chatStore) {
       const msg = session.messages.find((m) => m.id === messageId);
       if (!msg) return;
 
+      const settings = settingsStore.getState();
+      const namingMode = settings.favoriteNamingMode || 'first-sentence';
       const preview = truncateText((msg.content || '').replace(/\\n/g, ' '), 80);
-      const title = truncateText((msg.content || '').replace(/\\n/g, ' '), 30) || '(助手消息)';
-      chatStore.addFavorite(session.id, messageId, 'message', title, preview);
+
+      if (namingMode === 'ai') {
+        // AI 命名：先立即创建收藏（星标亮起），再异步获取 AI 标题
+        chatStore.addFavorite(session.id, messageId, 'message', 'AI 生成中...', preview);
+        btn.classList.add('active');
+        btn.textContent = '★';
+
+        generateFavoriteTitle(msg.content || '', settings).then((aiTitle) => {
+          if (aiTitle) {
+            const fav = chatStore.getFavoriteByMessageId(messageId);
+            if (fav) chatStore.updateFavoriteTitle(fav.id, aiTitle);
+          }
+        }).catch(() => {
+          // AI 失败时回退到首句截取
+          const maxLen = settings.favoriteTitleMaxLength || 30;
+          const fallback = truncateText((msg.content || '').replace(/\\n/g, ' '), maxLen) || '(助手消息)';
+          const fav = chatStore.getFavoriteByMessageId(messageId);
+          if (fav) chatStore.updateFavoriteTitle(fav.id, fallback);
+        });
+      } else {
+        // 首句截取模式
+        const maxLen = settings.favoriteTitleMaxLength || 30;
+        const title = truncateText((msg.content || '').replace(/\\n/g, ' '), maxLen) || '(助手消息)';
+        chatStore.addFavorite(session.id, messageId, 'message', title, preview);
+        btn.classList.add('active');
+        btn.textContent = '★';
+      }
     }
   });
 

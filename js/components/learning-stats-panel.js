@@ -1,5 +1,5 @@
 /**
- * 学习统计面板 UI 组件
+ * 学习统计面板 UI 组件（Agent 调用统计）
  */
 /** @type {Object} learningStatsStore 引用 */
 let _store = null;
@@ -54,58 +54,72 @@ export function initLearningStatsPanel(learningStatsStore) {
  */
 function renderStatsPanel(container) {
   const stats = _store.getStats();
-  const totalTime = _store.getStudyTimeTotal();
-  const todayTime = _store.getStudyTimeToday();
-  const accuracy = _store.getQuizAccuracy();
-  const topicDist = _store.getTopicDistribution();
+  const totalIn = stats.totalInputTokens || 0;
+  const totalOut = stats.totalOutputTokens || 0;
+  const apiCalls = stats.sessionTokenCount || 0;
   const toolDist = _store.getToolUsageDistribution();
-
-  const hasData = stats.totalQuestions > 0;
 
   let html = '';
 
-  // ── 统计卡片网格 ──
+  // ── Token 统计卡片 ──
   html += '<div class="stats-grid">';
-  html += buildCard('总学习时间', _store.formatTime(totalTime));
-  html += buildCard('今日学习', _store.formatTime(todayTime));
-  html += buildCard('工具调用次数', String(stats.totalQuestions));
-  html += buildCard('学习会话数', String(stats.sessionCount));
-
-  if (stats.quizStats.totalAttempted > 0) {
-    html += buildCard('测验正确率', accuracy + '%',
-      accuracy >= 80 ? 'var(--color-success)' : accuracy >= 60 ? 'var(--color-warning)' : 'var(--color-error)');
-  }
+  html += buildStatCard('总输入 Token', formatTokens(totalIn), 'var(--color-accent)');
+  html += buildStatCard('总输出 Token', formatTokens(totalOut), 'var(--color-success)');
+  html += buildStatCard('API 调用次数', String(apiCalls), 'var(--color-warning)');
+  html += buildStatCard('工具调用次数', String(stats.totalQuestions || 0), 'var(--color-text-primary)');
   html += '</div>';
 
-  // ── 分支分布 ──
-  html += '<div class="stats-section">';
-  html += '<div class="stats-section-title">📚 知识分支分布</div>';
-  if (topicDist.length > 0) {
-    const maxCount = topicDist[0].count;
-    html += '<div class="stats-bar-chart">';
-    for (const item of topicDist) {
-      const pct = Math.round((item.count / maxCount) * 100);
-      html += buildBarRow(item.topic, item.count, pct);
-    }
+  // ── Token 比例环 ──
+  if (totalIn > 0 || totalOut > 0) {
+    const inPct = totalIn + totalOut > 0 ? Math.round(totalIn / (totalIn + totalOut) * 100) : 0;
+    html += '<div class="stats-section">';
+    html += '<div class="stats-section-title">📊 Token 比例</div>';
+    html += '<div class="stats-token-ratio">';
+    html += `  <div class="stats-ratio-bar">`;
+    html += `    <div class="stats-ratio-fill in" style="width:${inPct}%"></div>`;
+    html += `    <div class="stats-ratio-fill out" style="width:${100 - inPct}%"></div>`;
+    html += `  </div>`;
+    html += `  <div class="stats-ratio-legend">`;
+    html += `    <span class="stats-legend-dot in"></span>输入 ${inPct}%`;
+    html += `    <span class="stats-legend-dot out"></span>输出 ${100 - inPct}%`;
+    html += `  </div>`;
     html += '</div>';
-  } else {
-    html += '<div class="stats-empty">暂无数据，开始学习后将自动统计</div>';
+    html += '</div>';
   }
-  html += '</div>';
 
-  // ── 工具使用频率 ──
+  // ── 工具调用分布 ──
   if (toolDist.length > 0) {
     html += '<div class="stats-section">';
-    html += '<div class="stats-section-title">🛠️ 常用工具</div>';
+    html += '<div class="stats-section-title">🛠️ 工具调用分布</div>';
     html += '<div class="stats-bar-chart">';
-    const topTools = toolDist.slice(0, 10);
-    const maxCount = topTools[0].count;
+    const topTools = toolDist.slice(0, 12);
+    const maxCount = topTools[0] ? topTools[0].count : 1;
     for (const item of topTools) {
       const pct = Math.round((item.count / maxCount) * 100);
       html += buildBarRow(formatToolName(item.tool), item.count, pct);
     }
     html += '</div>';
     html += '</div>';
+  }
+
+  // ── 知识分支分布 ──
+  const topicDist = _store.getTopicDistribution();
+  if (topicDist.length > 0) {
+    html += '<div class="stats-section">';
+    html += '<div class="stats-section-title">📚 知识分支分布</div>';
+    html += '<div class="stats-bar-chart">';
+    const maxTopic = topicDist[0].count;
+    for (const item of topicDist) {
+      const pct = Math.round((item.count / maxTopic) * 100);
+      html += buildBarRow(item.topic, item.count, pct);
+    }
+    html += '</div>';
+    html += '</div>';
+  }
+
+  // ── 无数据提示 ──
+  if (apiCalls === 0 && toolDist.length === 0) {
+    html = '<div class="stats-empty">暂无数据，开始对话后将自动统计 Agent 调用信息</div>';
   }
 
   // ── 重置按钮 ──
@@ -123,18 +137,17 @@ function renderStatsPanel(container) {
 }
 
 /**
- * 构建统计卡片 HTML
+ * 构建统计卡片
  */
-function buildCard(label, value, color) {
-  const style = color ? ` style="color:${color}"` : '';
+function buildStatCard(label, value, color) {
   return `<div class="stats-card">
-    <div class="stats-value"${style}>${value}</div>
+    <div class="stats-value" style="color:${color}">${value}</div>
     <div class="stats-label">${label}</div>
   </div>`;
 }
 
 /**
- * 构建柱状图行 HTML
+ * 构建柱状图行
  */
 function buildBarRow(label, count, percent) {
   return `<div class="stats-bar-row">
@@ -145,6 +158,15 @@ function buildBarRow(label, count, percent) {
       </div>
     </div>
   </div>`;
+}
+
+/**
+ * 格式化 token 数（K / M）
+ */
+function formatTokens(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return String(n);
 }
 
 /**
@@ -177,8 +199,10 @@ function formatToolName(name) {
     render_latex: '公式渲染',
     plot_sequence: '数列',
     show_formula_handbook: '公式手册',
-    show_error_analyzer: '错题分析',
+    show_error_analyzer: '易错点分析',
     show_flashcards: '记忆卡片',
+    show_interactive_proof: '交互式证明',
+    show_concept_map: '知识概念图',
   };
   return names[name] || name;
 }
@@ -187,12 +211,11 @@ function formatToolName(name) {
  * 显示重置确认框
  */
 function showResetConfirm(container) {
-  // 创建确认遮罩
   const overlay = document.createElement('div');
   overlay.className = 'stats-confirm-overlay';
   overlay.innerHTML = `
     <div class="stats-confirm-box">
-      <p>确定要重置所有学习统计数据吗？此操作不可撤销。</p>
+      <p>确定要重置所有统计数据吗？此操作不可撤销。</p>
       <div class="stats-confirm-actions">
         <button class="btn stats-confirm-cancel">取消</button>
         <button class="btn stats-confirm-danger">确认重置</button>

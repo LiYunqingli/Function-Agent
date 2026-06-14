@@ -253,28 +253,29 @@ export async function createStream(messages, tools, settings, callbacks, signal)
       }
     }
 
-    // 返回工具调用（有则返回数组，无则返回 null）
-    // Agent Loop 由调用方处理，createStream 本身不递归。
+    // 流结束：先读取状态，再 reset
     const toolCalls = parser.hasToolCalls() ? parser.flushToolCalls() : null;
-    console.log('[createStream] SSE 完成, finishReason=%s, toolCalls=%s',
-      parser.finishReason, toolCalls ? `(${toolCalls.length}个)` : 'null');
+    const finishReason = parser.finishReason;
+    const usage = parser.consumeUsage(); // 读取并清空 usage
+    parser.reset(); // 重置 parser（finishReason、toolCallsBuffer）
+    console.log('[createStream] SSE 完成, finishReason=%s, toolCalls=%s, usage=%s',
+      finishReason,
+      toolCalls ? `(${toolCalls.length}个)` : 'null',
+      usage ? `${usage.prompt_tokens}i/${usage.completion_tokens}o` : 'null');
 
-    // ★ 检测空响应：API 返回 choices:[] + completion_tokens:0
-    //   这是 GLM 等 API 在消息格式不规范时的「静默拒绝」
-    //   表现为：finishReason 始终为 null（既不是 stop 也不是 tool_calls）
-    if (parser.finishReason === null && !toolCalls) {
+    // ★ 检测空响应
+    if (finishReason === null && !toolCalls) {
       console.warn('[createStream] ★ 空响应检测：finishReason=null, 无 toolCalls');
       console.warn('[createStream]   可能原因：1) 消息格式不符合 API 规范 2) tool_call_id 不匹配 3) API 静默拒绝');
-      // 返回特殊标记，让 runAI 知道这是空响应
-      return { toolCalls: null, emptyResponse: true };
+      return { toolCalls: null, emptyResponse: true, usage: null };
     }
 
-    return { toolCalls, emptyResponse: false };
+    return { toolCalls, emptyResponse: false, usage };
 
   } catch (error) {
     if (error.name === 'AbortError') {
       console.log('[createStream] 请求被中止 (AbortError)');
-      return { toolCalls: null };
+      return { toolCalls: null, usage: null };
     }
     console.error('[createStream] 请求异常:', error.message);
     // onError 回调也做防御性包装，避免回调异常导致状态失控
@@ -283,7 +284,7 @@ export async function createStream(messages, tools, settings, callbacks, signal)
     } catch (cbErr) {
       console.error('[createStream] onError 回调异常:', cbErr);
     }
-    return { toolCalls: null };
+    return { toolCalls: null, usage: null };
   }
   // ★ 无 finally 块 —— 生命周期（UI 解锁）由 runAI 的 finally 统一管理。
   //   createStream 职责单一：读取 SSE → 返回结果。绝不触碰 isStreaming / _sendLock。
@@ -347,5 +348,62 @@ AI 回答摘要：${assistantMessage.slice(0, 300)}`;
   }
 
   console.log('[generateTitle] 生成标题: "%s"', title);
+  return title;
+}
+
+/**
+ * 调用 LLM 为收藏内容生成标题（非流式）
+ *
+ * @param {string} content - 收藏内容（消息文本或选中文本）
+ * @param {Object} settings - { apiUrl, apiKey, model, favoriteTitleMaxLength }
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<string>} 生成的标题
+ */
+export async function generateFavoriteTitle(content, settings, signal) {
+  const { apiUrl, apiKey, model, favoriteTitleMaxLength = 30 } = settings;
+
+  const prompt = `请为以下内容生成一个简短标题（不超过${favoriteTitleMaxLength}个字），直接返回标题文本，不要加引号、解释或标点符号。
+
+内容：${content.slice(0, 500)}`;
+
+  const body = {
+    model,
+    messages: [
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.3,
+    max_tokens: 50,
+    stream: false,
+  };
+
+  console.log('[generateFavoriteTitle] 发送标题生成请求: maxLength=%d', favoriteTitleMaxLength);
+
+  const response = await fetch(`${apiUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('[generateFavoriteTitle] API 请求失败:', errorText);
+    return '';
+  }
+
+  const data = await response.json();
+  let title = data.choices?.[0]?.message?.content || '';
+  title = title.trim()
+    .replace(/^["'「『《]/, '')
+    .replace(/["'」』》]$/, '')
+    .replace(/[。，！？、；：]$/, '');
+  if (title.length > favoriteTitleMaxLength) {
+    title = title.slice(0, favoriteTitleMaxLength);
+  }
+
+  console.log('[generateFavoriteTitle] 生成标题: "%s"', title);
   return title;
 }

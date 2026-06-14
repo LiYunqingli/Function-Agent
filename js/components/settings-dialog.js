@@ -254,6 +254,10 @@ export function initSettingsDialog(settingsStore, chatStore) {
     const titleNamingMode = titleModeRadio ? titleModeRadio.value : 'first-sentence';
     const titleMaxLength = parseInt(document.getElementById('title-max-length').value, 10) || 15;
 
+    const favModeRadio = document.querySelector('input[name="favorite-naming-mode"]:checked');
+    const favoriteNamingMode = favModeRadio ? favModeRadio.value : 'first-sentence';
+    const favoriteTitleMaxLength = parseInt(document.getElementById('favorite-title-max-length').value, 10) || 30;
+
     // 读取分段提示词并组合
     const promptParts = readPromptPartsFromForm();
     const systemPrompt = buildSystemPrompt(promptParts);
@@ -272,6 +276,8 @@ export function initSettingsDialog(settingsStore, chatStore) {
       systemPrompt,
       titleNamingMode,
       titleMaxLength,
+      favoriteNamingMode,
+      favoriteTitleMaxLength,
     };
     _settingsStore.updateSettings(newSettings);
     dialog.style.display = 'none';
@@ -488,4 +494,10 @@ function loadFormFromStore() {
   const modeRadio = document.querySelector(`input[name="title-naming-mode"][value="${mode}"]`);
   if (modeRadio) modeRadio.checked = true;
   document.getElementById('title-max-length').value = state.titleMaxLength || 15;
+
+  // 收藏命名
+  const favMode = state.favoriteNamingMode || 'first-sentence';
+  const favModeRadio = document.querySelector(`input[name="favorite-naming-mode"][value="${favMode}"]`);
+  if (favModeRadio) favModeRadio.checked = true;
+  document.getElementById('favorite-title-max-length').value = state.favoriteTitleMaxLength || 30;
 }

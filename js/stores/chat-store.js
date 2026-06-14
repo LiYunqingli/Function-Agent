@@ -179,6 +179,18 @@ class ChatStore extends Store {
   }
 
   /**
+   * 更新收藏标题（用于 AI 异步命名）
+   * @param {string} favoriteId - 收藏 ID
+   * @param {string} newTitle - 新标题
+   */
+  updateFavoriteTitle(favoriteId, newTitle) {
+    const favorites = this._state.favorites.map((f) =>
+      f.id === favoriteId ? { ...f, title: newTitle } : f
+    );
+    this.setState({ favorites });
+  }
+
+  /**
    * 创建新会话并自动切换
    * @param {string} [title] - 会话标题，默认"新对话"
    * @returns {Object} 新建的会话对象

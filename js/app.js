@@ -15,6 +15,7 @@ import { initMathSymbolKeyboard } from './components/math-symbol-keyboard.js';
 import { initSettingsDialog } from './components/settings-dialog.js';
 import { initLearningStatsPanel } from './components/learning-stats-panel.js';
 import { initFavoritesPanel } from './components/favorites-panel.js';
+import { initContextMenu } from './components/context-menu.js';
 import { learningStatsStore } from './stores/learning-stats-store.js';
 
 // ===== 注册所有工具 =====
@@ -58,6 +59,7 @@ initChatArea(chatStore, settingsStore, toolStore, inputBarApi);
 initSettingsDialog(settingsStore, chatStore);
 initLearningStatsPanel(learningStatsStore);
 initFavoritesPanel(chatStore);
+initContextMenu();
 
 // ===== 欢迎页面逻辑 =====
 const welcomePage = document.getElementById('welcome-page');

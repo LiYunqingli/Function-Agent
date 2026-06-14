@@ -369,7 +369,12 @@ async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null,
         },
         abortController.signal
       );
-      const { toolCalls, emptyResponse } = streamResult;
+      const { toolCalls, emptyResponse, usage } = streamResult;
+
+      // 记录 token 用量
+      if (usage && learningStatsStore) {
+        learningStatsStore.recordTokenUsage(usage.prompt_tokens, usage.completion_tokens);
+      }
 
       // 剥离 GLM-4.5 思维链标签，防止 &lt;/think&gt; 残留污染后续 API 请求
       if (currentContent && currentContent.includes('think>')) {

@@ -40,6 +40,9 @@ export const DEFAULT_SETTINGS = {
   // ── 会话命名 ──
   titleNamingMode: 'first-sentence', // 'first-sentence' | 'ai'
   titleMaxLength: 15,
+  // ── 收藏命名（消息和文字收藏，工具卡片除外） ──
+  favoriteNamingMode: 'first-sentence', // 'first-sentence' | 'ai'
+  favoriteTitleMaxLength: 30,
   // ── 通用 ──
   theme: 'system',
 };

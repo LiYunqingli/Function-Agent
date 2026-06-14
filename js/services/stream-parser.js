@@ -16,6 +16,9 @@ export class StreamParser {
      *   null         — 尚未结束
      */
     this.finishReason = null;
+
+    /** @type {Object|null} 最后一次收到的 usage 对象 */
+    this.usage = null;
   }
 
   /**
@@ -25,12 +28,21 @@ export class StreamParser {
    *   注意：onStreamEnd 由 createStream 统一管理，此处不调用。
    */
   processChunk(chunk, callbacks) {
+    // 优先捕获 token usage（可能在任意 chunk 中出现）
+    if (chunk.usage) {
+      this.usage = chunk.usage;
+    }
+
     if (!chunk.choices || !chunk.choices.length) {
       // ★ 空 choices 检测：GLM 等 API 在消息格式不规范时返回 choices:[]
       //   此时 usage.prompt_tokens > 0 但 completion_tokens = 0
       if (chunk.usage && chunk.usage.prompt_tokens > 0 && chunk.usage.completion_tokens === 0) {
         console.warn('[StreamParser] 收到空响应 chunk: choices=[], prompt_tokens=%d, completion_tokens=0',
           chunk.usage.prompt_tokens);
+      }
+      // 捕获 token usage
+      if (chunk.usage) {
+        this.usage = chunk.usage;
       }
       return;
     }
@@ -106,10 +118,21 @@ export class StreamParser {
 
 
   /**
+   * 读取并清空 token usage（由调用方在流结束后调用一次）
+   * @returns {Object|null}
+   */
+  consumeUsage() {
+    const u = this.usage;
+    this.usage = null;
+    return u;
+  }
+
+  /**
    * 重置解析器（每次新 SSE 请求前调用）
    */
   reset() {
     this.toolCallsBuffer.clear();
     this.finishReason = null;
+    this.usage = null;
   }
 }

@@ -45,6 +45,11 @@ class LearningStatsStore extends Store {
     super();
     this._state = {
       stats: {
+        // Token 用量
+        totalInputTokens: 0,
+        totalOutputTokens: 0,
+        sessionTokenCount: 0,
+        // 工具调用
         totalQuestions: 0,
         topicCounts: {},
         toolUsage: {},
@@ -52,6 +57,7 @@ class LearningStatsStore extends Store {
           totalAttempted: 0,
           totalCorrect: 0,
         },
+        // 学习时间
         studyTimeMinutes: 0,
         dailyTime: {},
         sessionCount: 0,
@@ -70,6 +76,9 @@ class LearningStatsStore extends Store {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (saved && typeof saved === 'object') {
         this._state.stats = {
+          totalInputTokens: saved.totalInputTokens || 0,
+          totalOutputTokens: saved.totalOutputTokens || 0,
+          sessionTokenCount: saved.sessionTokenCount || 0,
           totalQuestions: saved.totalQuestions || 0,
           topicCounts: saved.topicCounts || {},
           toolUsage: saved.toolUsage || {},
@@ -117,6 +126,18 @@ class LearningStatsStore extends Store {
 
     const today = new Date().toISOString().slice(0, 10);
     stats.lastActiveDate = today;
+
+    this._state.stats = stats;
+    this._saveToStorage();
+    this.setState({ stats });
+  }
+
+  /** 记录 token 用量（每次 API 调用后调用） */
+  recordTokenUsage(promptTokens, completionTokens) {
+    const stats = { ...this._state.stats };
+    stats.totalInputTokens += (promptTokens || 0);
+    stats.totalOutputTokens += (completionTokens || 0);
+    stats.sessionTokenCount += 1;
 
     this._state.stats = stats;
     this._saveToStorage();
@@ -193,6 +214,9 @@ class LearningStatsStore extends Store {
   /** 重置所有统计数据 */
   resetStats() {
     this._state.stats = {
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      sessionTokenCount: 0,
       totalQuestions: 0,
       topicCounts: {},
       toolUsage: {},
