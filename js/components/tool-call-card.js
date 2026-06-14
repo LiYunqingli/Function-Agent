@@ -104,7 +104,7 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
       if (e.target.closest('details')) return;
       toggleFullscreen(card);
     });
-    renderMathResult(body, componentName, toolResult.props);
+    renderMathResult(body, componentName, toolResult.props, toolCall.id);
   } else {
     statusBadge.classList.add('error');
     statusBadge.textContent = '失败';
@@ -204,10 +204,12 @@ function createLoadingSkeleton() {
  * @param {string} componentName - 组件名
  * @param {Object} props - 组件属性
  */
-function renderMathResult(container, componentName, props) {
+function renderMathResult(container, componentName, props, toolCallId) {
   // 动态导入数学组件渲染器
   import('./math/index.js').then(({ renderMathComponent }) => {
-    const rendered = renderMathComponent(componentName, props);
+    // 将 toolCallId 注入 props，供需要持久化的组件使用
+    const enrichedProps = toolCallId ? { ...props, _toolCallId: toolCallId } : props;
+    const rendered = renderMathComponent(componentName, enrichedProps);
     if (rendered) {
       container.appendChild(rendered);
     } else {

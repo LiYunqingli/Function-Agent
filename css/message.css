@@ -817,6 +817,34 @@
   background: rgba(25,118,210,0.1);
 }
 
+/* 按钮容器（阅卷主按钮 + 重新分析） */
+.quiz-grading-btn-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.quiz-grading-btn-wrap .quiz-grading-btn {
+  flex: 1;
+}
+
+/* 重新分析按钮 */
+.quiz-regrade-btn {
+  padding: 12px 18px;
+  border: 1px solid var(--color-danger, #e53935);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-danger, #e53935);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+.quiz-regrade-btn:hover {
+  background: rgba(229,57,53,0.08);
+}
+
 .quiz-grading-panel {
   margin-top: 12px;
   border: 1px solid var(--color-border-tertiary);
