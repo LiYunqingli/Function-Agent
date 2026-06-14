@@ -75,7 +75,12 @@ function createMenuDOM() {
       <span class="context-menu-icon">📌</span>
       <span class="context-menu-label">收藏此消息</span>
     </div>
-    <div class="context-menu-divider"></div>
+    <div class="context-menu-divider" data-section="fav"></div>
+    <div class="context-menu-item" data-action="session-stats">
+      <span class="context-menu-icon">📊</span>
+      <span class="context-menu-label">会话统计</span>
+    </div>
+    <div class="context-menu-divider" data-section="stats"></div>
     <div class="context-menu-item" data-action="copy">
       <span class="context-menu-icon">📋</span>
       <span class="context-menu-label">复制</span>
@@ -97,10 +102,11 @@ function bindEvents() {
     const selection = window.getSelection();
     const selectedText = selection ? selection.toString().trim() : '';
 
-    // 查找最近的消息容器（.message-wrapper 上有 dataset.messageId）或工具卡片
+    // 查找最近的消息容器（.message-wrapper 上有 dataset.messageId）或工具卡片或侧边栏会话
     const msgWrapper = e.target.closest('.message-wrapper');
     const toolCard = e.target.closest('.tool-call-card');
-    const targetEl = msgWrapper || toolCard;
+    const sessionItem = e.target.closest('.session-item');
+    const targetEl = msgWrapper || toolCard || sessionItem;
 
     _context = {
       x: e.clientX,
@@ -109,24 +115,38 @@ function bindEvents() {
       targetEl,
       messageEl: msgWrapper,
       toolCardEl: toolCard,
+      sessionEl: sessionItem,
     };
 
     // 根据上下文决定显示哪些菜单项
     const favSelectionItem = _menuEl.querySelector('[data-action="favorite-selection"]');
     const favMessageItem = _menuEl.querySelector('[data-action="favorite-message"]');
+    const sessionStatsItem = _menuEl.querySelector('[data-action="session-stats"]');
     const copyItem = _menuEl.querySelector('[data-action="copy"]');
+    const favDivider = _menuEl.querySelector('[data-section="fav"]');
+    const statsDivider = _menuEl.querySelector('[data-section="stats"]');
 
-    // 有选中文本 → 显示"收藏选中内容"
-    favSelectionItem.style.display = selectedText.length > 0 ? 'flex' : 'none';
+    // 右键在侧边栏会话上 → 仅显示会话统计
+    const isSession = !!sessionItem;
+    // 右键在消息/工具卡片上 → 显示收藏/复制
+    const isMessage = !!msgWrapper || !!toolCard;
+
+    // 有选中文本 → 显示"收藏选中内容" + "复制"
+    favSelectionItem.style.display = !isSession && selectedText.length > 0 ? 'flex' : 'none';
+    copyItem.style.display = !isSession && selectedText.length > 0 ? 'flex' : 'none';
 
     // 右键在消息/工具卡片上 → 显示"收藏此消息"
-    favMessageItem.style.display = targetEl ? 'flex' : 'none';
+    favMessageItem.style.display = isMessage ? 'flex' : 'none';
 
-    // 有选中文本 → 显示"复制"
-    copyItem.style.display = selectedText.length > 0 ? 'flex' : 'none';
+    // 右键在侧边栏会话上 → 显示"会话统计"
+    sessionStatsItem.style.display = isSession ? 'flex' : 'none';
 
-    // 如果两个收藏项都隐藏，不显示菜单
-    const hasVisibleItems = (selectedText.length > 0) || targetEl;
+    // 分隔线显示逻辑
+    if (favDivider) favDivider.style.display = (isMessage && selectedText.length > 0) ? 'block' : 'none';
+    if (statsDivider) statsDivider.style.display = (isSession && selectedText.length > 0) ? 'block' : 'none';
+
+    // 判断是否有可见菜单项
+    const hasVisibleItems = isSession || isMessage || selectedText.length > 0;
     if (!hasVisibleItems) {
       // 显示浏览器默认菜单的替代：至少显示复制（如果有选中文本）
       // 但实际上这里 selectedText 为空且 targetEl 为空，说明在空白区域右键
@@ -208,6 +228,9 @@ function handleAction(action) {
       break;
     case 'favorite-message':
       handleFavoriteMessage();
+      break;
+    case 'session-stats':
+      handleSessionStats();
       break;
     case 'copy':
       handleCopy();
@@ -416,4 +439,166 @@ function showToast(msg) {
   setTimeout(() => {
     toast.classList.remove('show');
   }, 1500);
+}
+
+// ══════════════════════════════════════════
+//  会话统计
+// ══════════════════════════════════════════
+
+/**
+ * 显示会话统计对话框
+ */
+function handleSessionStats() {
+  const { sessionEl } = _context;
+  if (!sessionEl || !chatStore) return;
+
+  const sessionId = sessionEl.dataset.id;
+  if (!sessionId) return;
+
+  const stats = chatStore.getSessionStats(sessionId);
+  if (!stats) return;
+
+  showSessionStatsDialog(stats);
+}
+
+/**
+ * 创建并显示会话统计面板
+ * @param {Object} stats - chatStore.getSessionStats() 返回的统计数据
+ */
+function showSessionStatsDialog(stats) {
+  // 移除已有面板
+  const existing = document.getElementById('session-stats-overlay');
+  if (existing) existing.remove();
+
+  const toolNames = {
+    plot_function: '函数图像', animate_limit: '极限动画',
+    show_differential: '微分可视化', plot_integral_area: '积分面积',
+    animate_taylor_series: '泰勒级数', plot_gradient_field: '梯度场',
+    plot_surface_3d: '3D曲面', animate_solid_of_revolution: '旋转体',
+    show_step_card: '分步解题', show_knowledge_tip: '知识点',
+    control_parameter_slider: '参数滑块', plot_polar_curve: '极坐标曲线',
+    plot_parametric_curve: '参数曲线', animate_series_convergence: '级数收敛',
+    plot_fourier_series: '傅里叶级数', plot_matrix_transform: '矩阵变换',
+    plot_eigenvectors: '特征向量', plot_distribution: '分布图',
+    animate_clt: '中心极限定理', plot_multivariable_integral: '多重积分',
+    show_comparison_table: '对比表', interactive_quiz: '互动测验',
+    render_latex: '公式渲染', plot_sequence: '数列',
+    show_formula_handbook: '公式手册', show_error_analyzer: '易错点分析',
+    show_flashcards: '记忆卡片', show_interactive_proof: '交互式证明',
+    show_concept_map: '知识概念图',
+  };
+
+  const inTokens = stats.inputTokens || 0;
+  const outTokens = stats.outputTokens || 0;
+  const totalT = inTokens + outTokens;
+
+  let toolListHtml = '';
+  const toolEntries = Object.entries(stats.toolCallDist || {});
+  if (toolEntries.length > 0) {
+    toolEntries.sort((a, b) => b[1] - a[1]);
+    const maxCount = toolEntries[0][1];
+    for (const [tool, count] of toolEntries) {
+      const name = toolNames[tool] || tool;
+      const pct = Math.round((count / maxCount) * 100);
+      toolListHtml += `<div class="stats-bar-row">
+        <div class="stats-bar-label" title="${name}">${name}</div>
+        <div class="stats-bar-track">
+          <div class="stats-bar-fill" style="width:${pct}%">
+            <span class="stats-bar-count">${count}</span>
+          </div>
+        </div>
+      </div>`;
+    }
+  }
+
+  const createdAtStr = stats.createdAt
+    ? new Date(stats.createdAt).toLocaleString('zh-CN')
+    : '未知';
+  const updatedAtStr = stats.updatedAt
+    ? new Date(stats.updatedAt).toLocaleString('zh-CN')
+    : '未知';
+
+  const html = `
+    <div class="dialog">
+      <div class="dialog-header">
+        <h2>会话统计</h2>
+        <button class="icon-btn session-stats-close">✕</button>
+      </div>
+      <div class="dialog-body stats-content">
+        <div class="stats-session-title">${escapeHtml(stats.title)}</div>
+
+        <div class="stats-grid">
+          <div class="stats-card">
+            <div class="stats-value" style="color:var(--color-accent)">${inTokens.toLocaleString()}</div>
+            <div class="stats-label">输入 Token</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-value" style="color:var(--color-success)">${outTokens.toLocaleString()}</div>
+            <div class="stats-label">输出 Token</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-value" style="color:var(--color-warning)">${totalT.toLocaleString()}</div>
+            <div class="stats-label">总计 Token</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-value" style="color:var(--color-text-primary)">${stats.toolCallCount || 0}</div>
+            <div class="stats-label">工具调用</div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stats-card">
+            <div class="stats-value">${stats.apiCallCount || 0}</div>
+            <div class="stats-label">API 调用</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-value">${stats.messageCount || 0}</div>
+            <div class="stats-label">消息总数</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-value">${stats.userCount || 0}</div>
+            <div class="stats-label">用户消息</div>
+          </div>
+          <div class="stats-card">
+            <div class="stats-value">${stats.assistantCount || 0}</div>
+            <div class="stats-label">助手消息</div>
+          </div>
+        </div>
+
+        <div class="stats-meta">
+          <span>创建: ${createdAtStr}</span>
+          <span>最近活动: ${updatedAtStr}</span>
+        </div>
+
+        ${toolListHtml ? `
+        <div class="stats-section">
+          <div class="stats-section-title">工具调用分布</div>
+          <div class="stats-bar-chart">${toolListHtml}</div>
+        </div>` : ''}
+      </div>
+    </div>
+  `;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'session-stats-overlay';
+  overlay.className = 'dialog-overlay';
+  overlay.style.display = 'flex';
+  overlay.innerHTML = html;
+
+  const close = () => overlay.remove();
+  overlay.querySelector('.session-stats-close').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener('keydown', function onEsc(e) {
+    if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
+  });
+
+  document.body.appendChild(overlay);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
 }

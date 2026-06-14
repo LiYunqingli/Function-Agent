@@ -63,8 +63,8 @@ function renderStatsPanel(container) {
 
   // ── Token 统计卡片 ──
   html += '<div class="stats-grid">';
-  html += buildStatCard('总输入 Token', formatTokens(totalIn), 'var(--color-accent)');
-  html += buildStatCard('总输出 Token', formatTokens(totalOut), 'var(--color-success)');
+  html += buildStatCard('总输入 Token', formatTokens(totalIn), 'var(--color-accent)', totalIn.toLocaleString());
+  html += buildStatCard('总输出 Token', formatTokens(totalOut), 'var(--color-success)', totalOut.toLocaleString());
   html += buildStatCard('API 调用次数', String(apiCalls), 'var(--color-warning)');
   html += buildStatCard('工具调用次数', String(stats.totalQuestions || 0), 'var(--color-text-primary)');
   html += '</div>';
@@ -139,9 +139,13 @@ function renderStatsPanel(container) {
 /**
  * 构建统计卡片
  */
-function buildStatCard(label, value, color) {
+function buildStatCard(label, value, color, subtext) {
+  const sub = subtext && subtext !== value
+    ? `<div class="stats-sub">${subtext} token</div>`
+    : '';
   return `<div class="stats-card">
     <div class="stats-value" style="color:${color}">${value}</div>
+    ${sub}
     <div class="stats-label">${label}</div>
   </div>`;
 }
