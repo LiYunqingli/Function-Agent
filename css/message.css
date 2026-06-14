@@ -753,6 +753,24 @@
   word-break: break-word;
 }
 
+/* ── AI 解析面板内列表样式 ── */
+.quiz-ai-content ul,
+.quiz-ai-content ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.quiz-ai-content li {
+  margin-bottom: 4px;
+  line-height: 1.7;
+}
+
+.quiz-ai-content li > ul,
+.quiz-ai-content li > ol {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
 .quiz-ai-loading {
   display: flex;
   align-items: center;
@@ -859,4 +877,60 @@
   line-height: 1.8;
   color: var(--color-text-primary);
   word-break: break-word;
+}
+
+/* ── AI 阅卷面板内列表样式 ── */
+.quiz-grading-content ul,
+.quiz-grading-content ol {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+
+.quiz-grading-content li {
+  margin-bottom: 4px;
+  line-height: 1.8;
+}
+
+.quiz-grading-content li > ul,
+.quiz-grading-content li > ol {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.quiz-grading-content h1,
+.quiz-grading-content h2,
+.quiz-grading-content h3,
+.quiz-grading-content h4,
+.quiz-ai-content h1,
+.quiz-ai-content h2,
+.quiz-ai-content h3,
+.quiz-ai-content h4 {
+  margin: 12px 0 6px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.quiz-grading-content h3,
+.quiz-ai-content h3 {
+  font-size: 14px;
+}
+
+.quiz-grading-content p,
+.quiz-ai-content p {
+  margin: 6px 0;
+}
+
+.quiz-grading-content strong,
+.quiz-ai-content strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.quiz-grading-content code,
+.quiz-ai-content code {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--color-bg-hover);
+  font-family: var(--font-mono, monospace);
+  font-size: 0.9em;
 }
