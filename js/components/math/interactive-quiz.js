@@ -39,17 +39,11 @@ export function renderInteractiveQuiz(props) {
     const card = document.createElement('div');
     card.style.cssText = 'margin-bottom:16px;padding:16px;border:1px solid var(--color-border-tertiary);border-radius:12px;background:var(--color-background-secondary);';
 
-    // 题号
+    // 题号 + 题目（同一行）
     const qNum = document.createElement('div');
-    qNum.style.cssText = 'font-size:14px;font-weight:500;margin-bottom:8px;color:var(--color-text-primary);';
-    qNum.textContent = `${qIdx + 1}.`;
+    qNum.style.cssText = 'font-size:14px;font-weight:500;margin-bottom:12px;line-height:1.6;color:var(--color-text-primary);';
+    qNum.innerHTML = `<span style="margin-right:4px;">${qIdx + 1}.</span><span>${renderLatexHTML(q.question || '')}</span>`;
     card.appendChild(qNum);
-
-    // 题目（支持 LaTeX）
-    const qText = document.createElement('div');
-    qText.style.cssText = 'font-size:14px;line-height:1.6;margin-bottom:12px;';
-    qText.innerHTML = renderLatexHTML(q.question || '');
-    card.appendChild(qText);
 
     // 选项
     const optionsWrap = document.createElement('div');
