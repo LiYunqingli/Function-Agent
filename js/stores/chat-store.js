@@ -202,6 +202,7 @@ class ChatStore extends Store {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       messages: [],
+      tokenUsage: { inputTokens: 0, outputTokens: 0 },
     };
     const sessions = [session, ...this._state.sessions];
     // 超出上限时移除最旧的
@@ -335,6 +336,83 @@ class ChatStore extends Store {
       }
     }
     return null;
+  }
+
+  /**
+   * 记录指定会话的 token 用量
+   * @param {string} sessionId
+   * @param {number} promptTokens
+   * @param {number} completionTokens
+   */
+  recordTokenUsage(sessionId, promptTokens, completionTokens) {
+    const sessions = this._state.sessions.map((s) => {
+      if (s.id !== sessionId) return s;
+      const existing = s.tokenUsage || { inputTokens: 0, outputTokens: 0 };
+      return {
+        ...s,
+        tokenUsage: {
+          inputTokens: existing.inputTokens + (promptTokens || 0),
+          outputTokens: existing.outputTokens + (completionTokens || 0),
+        },
+      };
+    });
+    this.setState({ sessions });
+  }
+
+  /**
+   * 获取指定会话的详细统计数据
+   * @param {string} sessionId
+   * @returns {Object|null}
+   */
+  getSessionStats(sessionId) {
+    const sessions = this._state.sessions;
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return null;
+
+    const messages = session.messages || [];
+    let userCount = 0;
+    let assistantCount = 0;
+    let toolCount = 0;
+    let toolCallCount = 0;
+    const toolCallDist = {};
+    let apiCallCount = 0;
+
+    for (const msg of messages) {
+      switch (msg.role) {
+        case 'user': userCount++; break;
+        case 'assistant':
+          assistantCount++;
+          apiCallCount++;
+          if (msg.toolCalls && Array.isArray(msg.toolCalls)) {
+            for (const tc of msg.toolCalls) {
+              toolCallCount++;
+              const toolName = (tc.function && tc.function.name) || 'unknown';
+              toolCallDist[toolName] = (toolCallDist[toolName] || 0) + 1;
+            }
+          }
+          break;
+        case 'tool': toolCount++; break;
+      }
+    }
+
+    const tokenUsage = session.tokenUsage || { inputTokens: 0, outputTokens: 0 };
+
+    return {
+      sessionId,
+      title: session.title,
+      createdAt: session.createdAt,
+      updatedAt: session.updatedAt,
+      messageCount: messages.length,
+      userCount,
+      assistantCount,
+      toolCount,
+      toolCallCount,
+      toolCallDist,
+      apiCallCount,
+      inputTokens: tokenUsage.inputTokens,
+      outputTokens: tokenUsage.outputTokens,
+      totalTokens: tokenUsage.inputTokens + tokenUsage.outputTokens,
+    };
   }
 }
 
