@@ -5,6 +5,38 @@
 import { chatStore } from '../stores/chat-store.js';
 import { settingsStore } from '../stores/settings-store.js';
 import { generateFavoriteTitle } from '../services/ai-client.js';
+import { formatToolName } from '../utils/formatters.js';
+
+/** 从工具调用参数中提取可读内容文本（用于 AI 命名） */
+function extractToolContent(toolCall) {
+  const toolName = formatToolName(toolCall.function.name);
+  const hint = '提示：请注重函数所表达的图案。';
+  try {
+    const args = JSON.parse(toolCall.function.arguments);
+    const exprFields = [
+      'function', 'expression', 'theorem', 'question', 'functionExpression',
+      'problem', 'statement', 'formula', 'equation',
+    ];
+    for (const field of exprFields) {
+      if (args[field] != null) {
+        return `${hint}\n工具：${toolName}\n表达式：${args[field]}`;
+      }
+    }
+    if (args.errors) return `${hint}\n工具：${toolName}\n易错点数量：${args.errors.length}`;
+    if (args.proofSteps) return `${hint}\n工具：${toolName}\n证明步骤数：${args.proofSteps.length}`;
+    if (args.cards) return `${hint}\n工具：${toolName}\n卡片数量：${args.cards.length}`;
+    if (args.sections) return `${hint}\n工具：${toolName}\n分类数量：${args.sections.length}`;
+    if (args.concepts) return `${hint}\n工具：${toolName}\n概念数量：${args.concepts.length}`;
+    for (const key of Object.keys(args)) {
+      if (typeof args[key] === 'string' && args[key].length > 0 && args[key].length < 200) {
+        return `${hint}\n工具：${toolName}\n参数：${args[key]}`;
+      }
+    }
+    return `${hint}\n工具：${toolName}\n参数：${JSON.stringify(args).slice(0, 200)}`;
+  } catch {
+    return `${hint}\n工具：${toolName}\n参数：${toolCall.function.arguments}`;
+  }
+}
 
 /** 菜单 DOM 引用 */
 let _menuEl = null;
@@ -253,9 +285,39 @@ function handleFavoriteMessage() {
     } else {
       // 获取工具卡片标题
       const titleEl = toolCardEl.querySelector('.tool-call-header');
-      const title = titleEl ? titleEl.textContent.trim() : '工具调用';
-      chatStore.addFavorite(session.id, toolCallId, 'toolCall', title, '工具调用结果');
-      showToast('已收藏此工具');
+      const domTitle = titleEl ? titleEl.textContent.trim() : '工具调用';
+      // 优先用 data 属性判断是否有自定义标题（由 tool-call-card.js 创建时设置）
+      const hasCustomTitle = toolCardEl.dataset.hasCustomTitle === '1';
+
+      const settings = settingsStore.getState();
+      const namingMode = settings.favoriteNamingMode || 'first-sentence';
+
+      if (!hasCustomTitle && namingMode === 'ai') {
+        // AI 命名模式：从 toolCall 参数提取表达式发给 AI
+        const toolCall = chatStore.getToolCall(toolCallId);
+        if (toolCall) {
+          chatStore.addFavorite(session.id, toolCallId, 'toolCall', 'AI 生成中...', '工具调用结果');
+          showToast('已收藏此工具');
+
+          const content = extractToolContent(toolCall);
+          generateFavoriteTitle(content, settings).then((aiTitle) => {
+            if (aiTitle) {
+              const fav = chatStore.getFavoriteByMessageId(toolCallId);
+              if (fav) chatStore.updateFavoriteTitle(fav.id, aiTitle);
+            }
+          }).catch(() => {
+            const fav = chatStore.getFavoriteByMessageId(toolCallId);
+            if (fav) chatStore.updateFavoriteTitle(fav.id, domTitle);
+          });
+        } else {
+          // 找不到 toolCall 对象时回退到 DOM 标题
+          chatStore.addFavorite(session.id, toolCallId, 'toolCall', domTitle, '工具调用结果');
+          showToast('已收藏此工具');
+        }
+      } else {
+        chatStore.addFavorite(session.id, toolCallId, 'toolCall', domTitle, '工具调用结果');
+        showToast('已收藏此工具');
+      }
     }
 
     // 更新 UI 状态

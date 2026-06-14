@@ -1,8 +1,52 @@
 /**
  * 侧边栏组件 —— 会话管理
  */
-import { truncateText, formatDate } from '../utils/formatters.js';
+import { truncateText } from '../utils/formatters.js';
 import { Modal } from './modal.js';
+
+/**
+ * 判断会话属于哪个日期分组
+ * @param {string} isoString - ISO 日期字符串
+ * @returns {string} 分组标签：今天 / 昨天 / 本周 / 本月 / YYYY年M月 / YYYY年
+ */
+function getDateGroup(isoString) {
+  if (!isoString) return '更早';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '更早';
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterdayStart = new Date(todayStart.getTime() - 86400000);
+  const thisWeekStart = new Date(todayStart.getTime() - todayStart.getDay() * 86400000);
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const thisYearStart = new Date(now.getFullYear(), 0, 1);
+
+  if (date >= todayStart) return '今天';
+  if (date >= yesterdayStart) return '昨天';
+  if (date >= thisWeekStart) return '本周';
+  if (date >= thisMonthStart) return '本月';
+
+  const year = date.getFullYear();
+  if (date >= thisYearStart) {
+    return `${year}年${date.getMonth() + 1}月`;
+  }
+
+  return `${year}年`;
+}
+
+/**
+ * 格式化时间为 HH:mm
+ * @param {string} isoString
+ * @returns {string}
+ */
+function formatTime(isoString) {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  if (isNaN(date.getTime())) return '';
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
 
 /**
  * 初始化侧边栏
@@ -59,7 +103,7 @@ export function initSidebar(chatStore) {
   renderSessionList();
 
   /**
-   * 渲染会话列表
+   * 渲染会话列表（按日期分组）
    */
   function renderSessionList() {
     const { sessions, activeSessionId } = chatStore.getState();
@@ -74,61 +118,82 @@ export function initSidebar(chatStore) {
       (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
     );
 
-    sessionList.innerHTML = '';
+    // 按日期分组
+    const groups = new Map();
     for (const session of sorted) {
-      const item = document.createElement('div');
-      item.className = `session-item${session.id === activeSessionId ? ' active' : ''}`;
-      item.dataset.id = session.id;
+      const group = getDateGroup(session.updatedAt);
+      if (!groups.has(group)) groups.set(group, []);
+      groups.get(group).push(session);
+    }
 
-      const title = document.createElement('span');
-      title.className = 'session-item-title';
-      title.textContent = truncateText(session.title, 28);
-      title.title = session.title;
+    sessionList.innerHTML = '';
 
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'session-item-delete';
-      deleteBtn.innerHTML = '✕';
-      deleteBtn.title = '删除对话';
-      deleteBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const ok = await Modal.confirm({
-          title: '删除对话',
-          message: `确定删除「${session.title}」？`,
-          confirmText: '删除',
-          confirmClass: 'btn-danger',
+    for (const [groupLabel, groupSessions] of groups) {
+      // 分组标题
+      const header = document.createElement('div');
+      header.className = 'session-group-header';
+      header.textContent = groupLabel;
+      sessionList.appendChild(header);
+
+      // 分组下的会话项
+      for (const session of groupSessions) {
+        const item = document.createElement('div');
+        item.className = `session-item${session.id === activeSessionId ? ' active' : ''}`;
+        item.dataset.id = session.id;
+
+        const title = document.createElement('span');
+        title.className = 'session-item-title';
+        title.textContent = truncateText(session.title, 20);
+        title.title = session.title;
+
+        const time = document.createElement('span');
+        time.className = 'session-item-time';
+        time.textContent = formatTime(session.updatedAt);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'session-item-delete';
+        deleteBtn.innerHTML = '✕';
+        deleteBtn.title = '删除对话';
+        deleteBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const ok = await Modal.confirm({
+            title: '删除对话',
+            message: `确定删除「${session.title}」？`,
+            confirmText: '删除',
+            confirmClass: 'btn-danger',
+          });
+          if (ok) {
+            chatStore.deleteSession(session.id);
+          }
         });
-        if (ok) {
-          chatStore.deleteSession(session.id);
-        }
-      });
 
-      item.appendChild(title);
-      item.appendChild(deleteBtn);
+        item.appendChild(title);
+        item.appendChild(time);
+        item.appendChild(deleteBtn);
 
-      // 点击切换会话
-      item.addEventListener('click', () => {
-        chatStore.switchSession(session.id);
-        // 移动端自动关闭侧边栏
-        sidebar.classList.remove('open');
-        sidebarOverlay.classList.remove('active');
-        // 自动聚焦输入框
-        document.getElementById('message-input')?.focus();
-      });
-
-      // 双击重命名
-      item.addEventListener('dblclick', async () => {
-        const newTitle = await Modal.prompt({
-          title: '重命名对话',
-          defaultValue: session.title,
-          placeholder: '输入新名称',
-          confirmText: '保存',
+        // 点击切换会话
+        item.addEventListener('click', () => {
+          chatStore.switchSession(session.id);
+          sidebar.classList.remove('open');
+          sidebarOverlay.classList.remove('active');
+          document.getElementById('message-input')?.focus();
         });
-        if (newTitle) {
-          chatStore.renameSession(session.id, newTitle);
-        }
-      });
 
-      sessionList.appendChild(item);
+        // 双击重命名
+        item.addEventListener('dblclick', async () => {
+          const newTitle = await Modal.prompt({
+            title: '重命名对话',
+            defaultValue: session.title,
+            placeholder: '输入新名称',
+            confirmText: '保存',
+          });
+          if (newTitle) {
+            chatStore.renameSession(session.id, newTitle);
+          }
+        });
+
+        sessionList.appendChild(item);
+      }
     }
   }
 }

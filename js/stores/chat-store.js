@@ -318,6 +318,24 @@ class ChatStore extends Store {
     const session = this.getActiveSession();
     return session ? session.messages : [];
   }
+
+  /**
+   * 根据 ID 查找工具调用对象（搜索当前活动会话的所有消息）
+   * @param {string} toolCallId
+   * @returns {Object|null}
+   */
+  getToolCall(toolCallId) {
+    const session = this.getActiveSession();
+    if (!session) return null;
+    for (const msg of session.messages) {
+      if (msg.toolCalls && Array.isArray(msg.toolCalls)) {
+        for (const tc of msg.toolCalls) {
+          if (tc.id === toolCallId) return tc;
+        }
+      }
+    }
+    return null;
+  }
 }
 
 // 导出单例

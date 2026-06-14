@@ -4,9 +4,48 @@
  */
 import { TOOL_COMPONENT_MAP, TOOL_ICONS } from '../config.js';
 import { formatToolName } from '../utils/formatters.js';
+import { settingsStore } from '../stores/settings-store.js';
+import { generateFavoriteTitle } from '../services/ai-client.js';
 
 /** 全屏单例 —— 同一时间只能有一张卡片全屏 */
 let _activeFullscreen = null;
+
+/**
+ * 从工具调用参数中提取可读内容文本（用于 AI 命名）
+ * @param {Object} toolCall - 工具调用对象 { function: { name, arguments } }
+ * @returns {string} 描述文本
+ */
+function extractToolContent(toolCall) {
+  const toolName = formatToolName(toolCall.function.name);
+  const hint = '提示：请注重函数所表达的图案。';
+  try {
+    const args = JSON.parse(toolCall.function.arguments);
+    const exprFields = [
+      'function', 'expression', 'theorem', 'question', 'functionExpression',
+      'problem', 'statement', 'formula', 'equation',
+    ];
+    for (const field of exprFields) {
+      if (args[field] != null) {
+        return `${hint}\n工具：${toolName}\n表达式：${args[field]}`;
+      }
+    }
+    // 多内容字段：取其摘要
+    if (args.errors) return `${hint}\n工具：${toolName}\n易错点数量：${args.errors.length}`;
+    if (args.proofSteps) return `${hint}\n工具：${toolName}\n证明步骤数：${args.proofSteps.length}`;
+    if (args.cards) return `${hint}\n工具：${toolName}\n卡片数量：${args.cards.length}`;
+    if (args.sections) return `${hint}\n工具：${toolName}\n分类数量：${args.sections.length}`;
+    if (args.concepts) return `${hint}\n工具：${toolName}\n概念数量：${args.concepts.length}`;
+    // 兜底：取第一个有意义的参数值
+    for (const key of Object.keys(args)) {
+      if (typeof args[key] === 'string' && args[key].length > 0 && args[key].length < 200) {
+        return `${hint}\n工具：${toolName}\n参数：${args[key]}`;
+      }
+    }
+    return `${hint}\n工具：${toolName}\n参数：${JSON.stringify(args).slice(0, 200)}`;
+  } catch {
+    return `${hint}\n工具：${toolName}\n参数：${toolCall.function.arguments}`;
+  }
+}
 
 /**
  * 创建工具调用卡片 DOM
@@ -24,6 +63,10 @@ export function createToolCallCard(toolCall, toolResult, toolStore, chatStore) {
   const toolName = toolCall.function.name;
   const componentName = TOOL_COMPONENT_MAP[toolName] || 'unknown';
   const icon = TOOL_ICONS[toolName] || '🔧';
+
+  // 判断工具卡片是否有自定义标题（从 toolResult.props 提取）
+  const hasCustomTitle = !!(toolResult && toolResult.props && toolResult.props.title);
+  card.dataset.hasCustomTitle = hasCustomTitle ? '1' : '0';
 
   // Header
   const header = document.createElement('div');
@@ -64,7 +107,7 @@ export function createToolCallCard(toolCall, toolResult, toolStore, chatStore) {
       // 尝试从 toolResult props 中提取有意义的标题
       if (toolResult && toolResult.props) {
         const p = toolResult.props;
-        if (p.title) title = String(p.title);
+        if (p.title) { title = String(p.title); }
         if (p.question) preview = String(p.question);
         else if (p.function) preview = `f(x) = ${p.function}`;
         else if (p.sections) preview = `${(p.sections || []).length} 个公式分类`;
@@ -76,9 +119,31 @@ export function createToolCallCard(toolCall, toolResult, toolStore, chatStore) {
         else if (p.functionExpression) preview = `f(x) = ${p.functionExpression}`;
       }
 
-      chatStore.addFavorite(session.id, toolCall.id, 'toolCall', title, preview);
-      favBtn.classList.add('active');
-      favBtn.textContent = '★';
+      const settings = settingsStore.getState();
+      const namingMode = settings.favoriteNamingMode || 'first-sentence';
+
+      // 无自定义标题 且 AI 命名开启：将表达式交给 AI 命名
+      if (!hasCustomTitle && namingMode === 'ai') {
+        chatStore.addFavorite(session.id, toolCall.id, 'toolCall', 'AI 生成中...', preview);
+        favBtn.classList.add('active');
+        favBtn.textContent = '★';
+
+        const content = extractToolContent(toolCall);
+        generateFavoriteTitle(content, settings).then((aiTitle) => {
+          if (aiTitle) {
+            const fav = chatStore.getFavoriteByMessageId(toolCall.id);
+            if (fav) chatStore.updateFavoriteTitle(fav.id, aiTitle);
+          }
+        }).catch(() => {
+          // AI 失败回退到工具名
+          const fav = chatStore.getFavoriteByMessageId(toolCall.id);
+          if (fav) chatStore.updateFavoriteTitle(fav.id, title);
+        });
+      } else {
+        chatStore.addFavorite(session.id, toolCall.id, 'toolCall', title, preview);
+        favBtn.classList.add('active');
+        favBtn.textContent = '★';
+      }
     }
   });
 
