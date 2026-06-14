@@ -216,10 +216,71 @@
             <span class="setting-hint">AI 命名时标题不超过此字数</span>
           </div>
         </div>
-        <!-- ── System Prompt ── -->
+        <!-- ── System Prompt（分段编辑） ── -->
         <div class="setting-section">
           <h3>💬 大语言模型 System Prompt</h3>
-          <textarea id="system-prompt" rows="5" placeholder="系统提示词..."></textarea>
+          <p class="setting-hint" style="margin-bottom:10px;">提示词已拆分为四个部分，分别编辑后自动合并发送给模型。</p>
+
+          <!-- 角色定义 -->
+          <div class="prompt-part">
+            <div class="prompt-part-header" data-target="prompt-role">
+              <span class="prompt-part-icon">🎭</span>
+              <span class="prompt-part-title">角色定义</span>
+              <span class="prompt-part-desc">描述 AI 的身份与专业领域</span>
+              <svg class="prompt-part-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="prompt-part-body" id="prompt-role">
+              <textarea id="prompt-role-definition" rows="4" placeholder="描述 AI 的角色、身份、专业领域..."></textarea>
+            </div>
+          </div>
+
+          <!-- 可用工具列表 -->
+          <div class="prompt-part">
+            <div class="prompt-part-header" data-target="prompt-tools">
+              <span class="prompt-part-icon">🛠️</span>
+              <span class="prompt-part-title">可用工具列表</span>
+              <span class="prompt-part-desc">列举所有可调用的工具及用途</span>
+              <svg class="prompt-part-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="prompt-part-body" id="prompt-tools">
+              <textarea id="prompt-tools-list" rows="12" placeholder="列出所有可用工具名称及其用途说明..."></textarea>
+            </div>
+          </div>
+
+          <!-- 注意事项 -->
+          <div class="prompt-part">
+            <div class="prompt-part-header" data-target="prompt-guide">
+              <span class="prompt-part-icon">📋</span>
+              <span class="prompt-part-title">注意事项</span>
+              <span class="prompt-part-desc">回复时必须遵守的行为规范</span>
+              <svg class="prompt-part-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="prompt-part-body" id="prompt-guide">
+              <textarea id="prompt-guidelines" rows="6" placeholder="格式要求、工具使用规范、回答风格..."></textarea>
+            </div>
+          </div>
+
+          <!-- 其他补充 -->
+          <div class="prompt-part">
+            <div class="prompt-part-header" data-target="prompt-supp">
+              <span class="prompt-part-icon">💡</span>
+              <span class="prompt-part-title">其他补充</span>
+              <span class="prompt-part-desc">引导策略、互动建议等额外说明</span>
+              <svg class="prompt-part-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+            <div class="prompt-part-body" id="prompt-supp">
+              <textarea id="prompt-supplement" rows="4" placeholder="教学互动策略、个性化引导建议..."></textarea>
+            </div>
+          </div>
+
+          <!-- 预览完整 Prompt -->
+          <div class="prompt-preview-bar">
+            <button id="preview-prompt-btn" class="btn btn-sm btn-outline">👁️ 预览完整 Prompt</button>
+            <button id="reset-prompt-btn" class="btn btn-sm btn-outline" style="color: var(--color-danger, #e74c3c);">↺ 恢复默认</button>
+          </div>
+          <div id="prompt-preview-panel" class="prompt-preview-panel" style="display:none;">
+            <pre id="prompt-preview-text"></pre>
+          </div>
         </div>
         <!-- ── 数据管理 ── -->
         <div class="setting-section">

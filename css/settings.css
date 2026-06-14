@@ -143,3 +143,115 @@
   font-family: var(--font-mono, monospace);
   font-size: var(--font-size-xs);
 }
+
+/* ─────────────────────────────────────────────
+   分段提示词（Prompt Parts）折叠面板
+───────────────────────────────────────────── */
+
+.prompt-part {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+
+.prompt-part:focus-within {
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.prompt-part-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 10px var(--spacing-md);
+  cursor: pointer;
+  user-select: none;
+  background: var(--color-bg-hover);
+  transition: background 0.15s;
+}
+
+.prompt-part-header:hover {
+  background: var(--color-bg-active, rgba(0,0,0,0.06));
+}
+
+.prompt-part-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.prompt-part-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  flex-shrink: 0;
+}
+
+.prompt-part-desc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-left: var(--spacing-xs);
+  flex: 1;
+}
+
+.prompt-part-arrow {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  transition: transform 0.2s ease;
+}
+
+.prompt-part-header.open .prompt-part-arrow {
+  transform: rotate(180deg);
+}
+
+/* 折叠体 */
+.prompt-part-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease, padding 0.2s ease;
+  padding: 0 var(--spacing-md);
+}
+
+.prompt-part-body.open {
+  max-height: 600px;
+  padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+}
+
+.prompt-part-body textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-mono, monospace);
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+/* ── 预览/重置按钮栏 ── */
+.prompt-preview-bar {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+/* ── 完整 Prompt 预览面板 ── */
+.prompt-preview-panel {
+  margin-top: var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.prompt-preview-panel pre {
+  margin: 0;
+  padding: var(--spacing-md);
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono, monospace);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-text-primary);
+  background: var(--color-bg-hover);
+  max-height: 320px;
+  overflow-y: auto;
+  line-height: 1.65;
+}

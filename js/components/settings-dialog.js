@@ -2,6 +2,8 @@
  * 设置弹窗组件
  */
 
+import { buildSystemPrompt, DEFAULT_PROMPT_PARTS } from '../prompt.js';
+
 /** @type {Object} settingsStore 引用 */
 let _settingsStore = null;
 /** @type {Object} chatStore 引用 */
@@ -199,11 +201,55 @@ export function initSettingsDialog(settingsStore, chatStore) {
     tempVal.textContent = tempSlider.value;
   });
 
+  // ── 分段提示词：折叠/展开 ──
+  document.querySelectorAll('.prompt-part-header').forEach((header) => {
+    header.addEventListener('click', () => {
+      const targetId = header.getAttribute('data-target');
+      const body = document.getElementById(targetId);
+      if (!body) return;
+      const isOpen = body.classList.toggle('open');
+      header.classList.toggle('open', isOpen);
+    });
+  });
+
+  // ── 预览完整 Prompt ──
+  const previewBtn = document.getElementById('preview-prompt-btn');
+  const previewPanel = document.getElementById('prompt-preview-panel');
+  const previewText = document.getElementById('prompt-preview-text');
+  if (previewBtn) {
+    previewBtn.addEventListener('click', () => {
+      const isVisible = previewPanel.style.display !== 'none';
+      if (isVisible) {
+        previewPanel.style.display = 'none';
+        previewBtn.textContent = '👁️ 预览完整 Prompt';
+      } else {
+        const parts = readPromptPartsFromForm();
+        previewText.textContent = buildSystemPrompt(parts);
+        previewPanel.style.display = 'block';
+        previewBtn.textContent = '🙈 收起预览';
+      }
+    });
+  }
+
+  // ── 恢复默认提示词 ──
+  const resetPromptBtn = document.getElementById('reset-prompt-btn');
+  if (resetPromptBtn) {
+    resetPromptBtn.addEventListener('click', () => {
+      if (!confirm('确定要将提示词恢复为默认值吗？')) return;
+      writePromptPartsToForm(DEFAULT_PROMPT_PARTS);
+      if (previewPanel) previewPanel.style.display = 'none';
+    });
+  }
+
   // 保存设置
   saveBtn.addEventListener('click', () => {
     const titleModeRadio = document.querySelector('input[name="title-naming-mode"]:checked');
     const titleNamingMode = titleModeRadio ? titleModeRadio.value : 'first-sentence';
     const titleMaxLength = parseInt(document.getElementById('title-max-length').value, 10) || 15;
+
+    // 读取分段提示词并组合
+    const promptParts = readPromptPartsFromForm();
+    const systemPrompt = buildSystemPrompt(promptParts);
 
     const newSettings = {
       apiUrl: document.getElementById('api-url').value.trim(),
@@ -215,7 +261,8 @@ export function initSettingsDialog(settingsStore, chatStore) {
       visionSystemPrompt: document.getElementById('vision-system-prompt').value,
       temperature: parseFloat(tempSlider.value),
       maxTokens: parseInt(document.getElementById('max-tokens').value, 10) || 4096,
-      systemPrompt: document.getElementById('system-prompt').value,
+      promptParts,
+      systemPrompt,
       titleNamingMode,
       titleMaxLength,
     };
@@ -379,6 +426,31 @@ function resetImportPanel() {
 }
 
 /**
+ * 从分段提示词表单中读取各部分文本
+ * @returns {{ roleDefinition: string, toolsList: string, guidelines: string, supplement: string }}
+ */
+function readPromptPartsFromForm() {
+  return {
+    roleDefinition: (document.getElementById('prompt-role-definition')?.value ?? '').trim(),
+    toolsList: (document.getElementById('prompt-tools-list')?.value ?? '').trim(),
+    guidelines: (document.getElementById('prompt-guidelines')?.value ?? '').trim(),
+    supplement: (document.getElementById('prompt-supplement')?.value ?? '').trim(),
+  };
+}
+
+/**
+ * 将各部分提示词写入对应表单控件
+ * @param {{ roleDefinition?: string, toolsList?: string, guidelines?: string, supplement?: string }} parts
+ */
+function writePromptPartsToForm(parts) {
+  const el = (id) => document.getElementById(id);
+  if (el('prompt-role-definition')) el('prompt-role-definition').value = parts.roleDefinition ?? '';
+  if (el('prompt-tools-list')) el('prompt-tools-list').value = parts.toolsList ?? '';
+  if (el('prompt-guidelines')) el('prompt-guidelines').value = parts.guidelines ?? '';
+  if (el('prompt-supplement')) el('prompt-supplement').value = parts.supplement ?? '';
+}
+
+/**
  * 从 settingsStore 加载值到表单
  */
 function loadFormFromStore() {
@@ -393,7 +465,17 @@ function loadFormFromStore() {
   document.getElementById('temperature').value = state.temperature || 0.7;
   document.getElementById('temp-val').textContent = state.temperature || 0.7;
   document.getElementById('max-tokens').value = state.maxTokens || 4096;
-  document.getElementById('system-prompt').value = state.systemPrompt || '';
+
+  // 分段提示词：优先从 promptParts 加载，其次尝试从 systemPrompt 回退填入角色定义
+  const parts = state.promptParts || DEFAULT_PROMPT_PARTS;
+  writePromptPartsToForm(parts);
+
+  // 隐藏预览面板
+  const previewPanel = document.getElementById('prompt-preview-panel');
+  if (previewPanel) previewPanel.style.display = 'none';
+  const previewBtn = document.getElementById('preview-prompt-btn');
+  if (previewBtn) previewBtn.textContent = '👁️ 预览完整 Prompt';
+
   // 会话命名
   const mode = state.titleNamingMode || 'first-sentence';
   const modeRadio = document.querySelector(`input[name="title-naming-mode"][value="${mode}"]`);

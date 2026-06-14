@@ -4,6 +4,7 @@
 import { Store } from './store-base.js';
 import { STORAGE_KEYS, DEFAULT_SETTINGS } from '../config.js';
 import { storageAdapter } from '../services/storage-adapter.js';
+import { buildSystemPrompt, DEFAULT_PROMPT_PARTS } from '../prompt.js';
 
 function normalizeText(value) {
   if (value === null || value === undefined) return '';
@@ -26,13 +27,25 @@ function normalizeText(value) {
   }
 }
 
+function sanitizePromptParts(parts) {
+  if (!parts || typeof parts !== 'object') return { ...DEFAULT_PROMPT_PARTS };
+  return {
+    roleDefinition: normalizeText(parts.roleDefinition) || DEFAULT_PROMPT_PARTS.roleDefinition,
+    toolsList: normalizeText(parts.toolsList) || DEFAULT_PROMPT_PARTS.toolsList,
+    guidelines: normalizeText(parts.guidelines) || DEFAULT_PROMPT_PARTS.guidelines,
+    supplement: normalizeText(parts.supplement) || DEFAULT_PROMPT_PARTS.supplement,
+  };
+}
+
 function sanitizeSettings(settings) {
+  const parts = sanitizePromptParts(settings.promptParts);
   return {
     ...settings,
     apiUrl: normalizeText(settings.apiUrl),
     apiKey: normalizeText(settings.apiKey),
     model: normalizeText(settings.model),
-    systemPrompt: normalizeText(settings.systemPrompt),
+    promptParts: parts,
+    systemPrompt: normalizeText(settings.systemPrompt) || buildSystemPrompt(parts),
     visionApiUrl: normalizeText(settings.visionApiUrl),
     visionApiKey: normalizeText(settings.visionApiKey),
     visionModel: normalizeText(settings.visionModel),
