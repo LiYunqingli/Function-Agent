@@ -9,7 +9,7 @@ let _settingsStore = null;
 /** @type {Object} chatStore 引用 */
 let _chatStore = null;
 
-// ── Web Crypto 加密/解密工具 ──
+// Web Crypto 加密/解密工具
 
 /** AES-GCM 参数 */
 const ENC_ALGO = 'AES-GCM';
@@ -115,7 +115,7 @@ async function decryptData(ciphertextBase64, password) {
   return JSON.parse(dec.decode(plaintext));
 }
 
-// ── 文件下载 / 上传 ──
+// 文件下载 / 上传
 
 /**
  * 触发文件下载
@@ -152,7 +152,7 @@ function downloadJSON(data, filename) {
   URL.revokeObjectURL(url);
 }
 
-// ── 初始化 ──
+// 初始化
 
 /**
  * 初始化设置弹窗
@@ -201,7 +201,7 @@ export function initSettingsDialog(settingsStore, chatStore) {
     tempVal.textContent = tempSlider.value;
   });
 
-  // ── 分段提示词：折叠/展开 ──
+  // 分段提示词：折叠/展开
   document.querySelectorAll('.prompt-part-header').forEach((header) => {
     header.addEventListener('click', () => {
       const targetId = header.getAttribute('data-target');
@@ -212,7 +212,7 @@ export function initSettingsDialog(settingsStore, chatStore) {
     });
   });
 
-  // ── 预览完整 Prompt ──
+  // 预览完整 Prompt
   const previewBtn = document.getElementById('preview-prompt-btn');
   const previewPanel = document.getElementById('prompt-preview-panel');
   const previewText = document.getElementById('prompt-preview-text');
@@ -231,7 +231,7 @@ export function initSettingsDialog(settingsStore, chatStore) {
     });
   }
 
-  // ── 恢复默认提示词 ──
+  // 恢复默认提示词
   const resetPromptBtn = document.getElementById('reset-prompt-btn');
   if (resetPromptBtn) {
     resetPromptBtn.addEventListener('click', () => {
@@ -270,7 +270,7 @@ export function initSettingsDialog(settingsStore, chatStore) {
     dialog.style.display = 'none';
   });
 
-  // ── 数据管理 ──
+  // 数据管理
 
   // 清空所有聊天记录
   document.getElementById('clear-chats-btn').addEventListener('click', () => {
@@ -288,7 +288,7 @@ export function initSettingsDialog(settingsStore, chatStore) {
     location.reload();
   });
 
-  // ── 导出设置信息（加密） ──
+  // 导出设置信息（加密）
   document.getElementById('export-settings-btn').addEventListener('click', async () => {
     const settings = _settingsStore.getState();
     // 完整导出，包含 API Key
@@ -318,7 +318,7 @@ export function initSettingsDialog(settingsStore, chatStore) {
     }
   });
 
-  // ── 导入设置信息 ──
+  // 导入设置信息
   const importPanel = document.getElementById('import-settings-panel');
 
   document.getElementById('import-settings-btn').addEventListener('click', () => {
@@ -388,7 +388,7 @@ export function initSettingsDialog(settingsStore, chatStore) {
     }
   });
 
-  // ── 导出聊天记录（明文 JSON） ──
+  // 导出聊天记录（明文 JSON）
   document.getElementById('export-chats-btn').addEventListener('click', () => {
     const sessions = _chatStore.getState().sessions;
     if (sessions.length === 0) {

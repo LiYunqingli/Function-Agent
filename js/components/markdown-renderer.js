@@ -31,7 +31,7 @@ marked.setOptions({
 export function renderMarkdown(content) {
   if (!content) return '';
 
-  // ★ 统一数学公式占位符存储（不区分块级/行内，统一编号避免冲突）
+  // 统一数学公式占位符存储，不区分块级/行内，统一编号避免冲突
   const mathPlaceholders = [];
   const PLACEHOLDER_PREFIX = '%%MATH_';
 

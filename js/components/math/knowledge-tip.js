@@ -17,7 +17,7 @@ export function renderKnowledgeTip(props) {
   if (content) {
     const contentEl = document.createElement('div');
     contentEl.className = 'knowledge-tip-content';
-    // ★ 渲染所有 LaTeX 格式：\(...\) 、 \[...\] 、 $...$ 、 $$...$$
+    // 渲染所有 LaTeX 格式：\(...\) 、 \[...\] 、 $...$ 、 $$...$$
     let html = content
       // 块级：\[...\]
       .replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => {

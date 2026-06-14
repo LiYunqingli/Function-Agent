@@ -4,9 +4,8 @@
  * 题型：single（单选）、multiple（多选）、true-false（判断）、fill-blank（填空）、subjective（主观）
  * 主观题支持展开 AI 解析面板
  * 底部 AI 阅卷：分析答题情况与薄弱点
- *
- * ★ 持久化：答题数据、AI 解析、AI 阅卷结果均通过 localStorage 持久化
- * ★ AI 阅卷按钮：首次分析后拆分为「收起/展开」+「重新分析」
+ * 答题数据、AI 解析、AI 阅卷结果均通过 localStorage 持久化
+ * AI 阅卷按钮首次分析后拆分为「收起/展开」+「重新分析」
  *
  * @param {Object} props - { title, questions: [{ type, question, ... }], _toolCallId }
  * @returns {HTMLElement}
@@ -15,9 +14,7 @@ import { renderLatexHTML } from '../../utils/latex.js';
 import { renderMarkdown } from '../markdown-renderer.js';
 import { settingsStore } from '../../stores/settings-store.js';
 
-/* ═══════════════════════════════════════════════
-   常量 & 工具
-   ═══════════════════════════════════════════════ */
+// 常量 & 工具
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
@@ -45,7 +42,7 @@ function normalizeType(q) {
   return 'single';
 }
 
-/* ── localStorage 读写 ── */
+/* localStorage 读写 */
 
 function loadQuizData(toolCallId) {
   if (!toolCallId) return null;
@@ -62,9 +59,7 @@ function saveQuizData(toolCallId, data) {
   } catch { /* quota exceeded → ignore */ }
 }
 
-/* ═══════════════════════════════════════════════
-   通用 DOM 工厂
-   ═══════════════════════════════════════════════ */
+// 通用 DOM 工厂
 
 /** 创建通用题目卡片容器 */
 function createCard(q, qIdx) {
@@ -141,9 +136,7 @@ function markButton(btn, isCorrect) {
   btn.style.cursor = 'default';
 }
 
-/* ═══════════════════════════════════════════════
-   各题型渲染器
-   ═══════════════════════════════════════════════ */
+// 各题型渲染器
 
 /**
  * 渲染单选题
@@ -194,7 +187,7 @@ function renderSingleChoice(q, qIdx, onAnswer, saved) {
 
   card.appendChild(optionsWrap);
 
-  // ── 恢复已保存的答题状态 ──
+  // 恢复已保存的答题状态
   if (saved && saved.selected != null) {
     answered = true;
     selectedIdx = saved.selected;
@@ -299,7 +292,7 @@ function renderMultipleChoice(q, qIdx, onAnswer, saved) {
 
   submitBtn.addEventListener('click', doSubmit);
 
-  // ── 恢复已保存的答题状态 ──
+  // 恢复已保存的答题状态
   if (saved && Array.isArray(saved.selected)) {
     answered = true;
     saved.selected.forEach(i => selected.add(i));
@@ -388,7 +381,7 @@ function renderTrueFalse(q, qIdx, onAnswer, saved) {
   btnWrap.appendChild(falseBtn);
   card.appendChild(btnWrap);
 
-  // ── 恢复已保存的答题状态 ──
+  // 恢复已保存的答题状态
   if (saved && saved.selected != null) {
     answered = true;
     userValue = saved.selected;
@@ -481,7 +474,7 @@ function renderFillBlank(q, qIdx, onAnswer, saved) {
   checkBtn.addEventListener('click', () => check());
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') check(); });
 
-  // ── 恢复已保存的答题状态 ──
+  // 恢复已保存的答题状态
   if (saved && saved.selected != null) {
     input.value = saved.selected;
     check(saved.selected);
@@ -542,7 +535,7 @@ function renderSubjective(q, qIdx, onAnswer, saved, savedAI, onSaveAI) {
   let aiLoaded = false;
   let aiLoadingActive = false;
 
-  // ── 恢复已保存的主观题答案 ──
+  // 恢复已保存的主观题答案
   if (saved && saved.selected != null) {
     submitted = true;
     textarea.value = saved.selected;
@@ -554,7 +547,7 @@ function renderSubjective(q, qIdx, onAnswer, saved, savedAI, onSaveAI) {
     textarea.style.cursor = 'default';
   }
 
-  // ── 恢复已保存的 AI 解析 ──
+  // 恢复已保存的 AI 解析
   if (savedAI) {
     aiLoaded = true;
     aiContent.innerHTML = renderMarkdown(savedAI);
@@ -611,9 +604,7 @@ function renderSubjective(q, qIdx, onAnswer, saved, savedAI, onSaveAI) {
   };
 }
 
-/* ═══════════════════════════════════════════════
-   AI 解析 & 阅卷（流式调用 LLM）
-   ═══════════════════════════════════════════════ */
+// AI 解析 & 阅卷（流式调用 LLM）
 
 /**
  * 通用 SSE 流式读取
@@ -770,9 +761,7 @@ ${summary}
   }
 }
 
-/* ═══════════════════════════════════════════════
-   主入口
-   ═══════════════════════════════════════════════ */
+// 主入口
 
 export function renderInteractiveQuiz(props) {
   const { title, questions = [], _toolCallId } = props;
@@ -788,13 +777,13 @@ export function renderInteractiveQuiz(props) {
   const body = document.createElement('div');
   body.className = 'math-component-body quiz-body';
 
-  // ── 加载已保存的 quiz 数据 ──
+  // 加载已保存的 quiz 数据
   const savedData = loadQuizData(_toolCallId);
   const savedAnswers = savedData?.answers || {};
   const savedAIAnalysis = savedData?.aiAnalysis || {};
   const savedGradingText = savedData?.aiGrading || null;
 
-  // ── 统计信息 ──
+  // 统计信息
   const statsBar = document.createElement('div');
   statsBar.className = 'quiz-stats-bar';
 
@@ -829,7 +818,7 @@ export function renderInteractiveQuiz(props) {
   statsBar.appendChild(statsRight);
   body.appendChild(statsBar);
 
-  // ── 题目渲染 ──
+  // 题目渲染
   let correctCount = 0;
   let answeredCount = 0;
   const answerRecords = {}; // qIdx → { type, correct, selected, ... }
@@ -924,7 +913,7 @@ export function renderInteractiveQuiz(props) {
     renderers[qIdx] = renderer;
     body.appendChild(renderer.card);
 
-    // ── 恢复已保存的答题统计 ──
+    // 恢复已保存的答题统计
     if (saved) {
       answerRecords[qIdx] = saved;
       answerRecords[qIdx].getAnswerText = renderer.getAnswerText;
@@ -935,7 +924,7 @@ export function renderInteractiveQuiz(props) {
 
   updateScore();
 
-  // ── AI 阅卷区域 ──
+  // AI 阅卷区域
   const gradingSection = document.createElement('div');
   gradingSection.className = 'quiz-grading-section';
 
@@ -976,7 +965,7 @@ export function renderInteractiveQuiz(props) {
   let gradingLoaded = !!savedGradingText;
   let gradingLoadingActive = false;
 
-  // ── 恢复已保存的阅卷结果 ──
+  // 恢复已保存的阅卷结果
   if (savedGradingText) {
     gradingContent.innerHTML = renderMarkdown(savedGradingText);
     gradingContent.dataset.loaded = 'true';

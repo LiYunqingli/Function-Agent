@@ -1,9 +1,9 @@
 /**
  * 聊天主区域 —— 消息发送、AI 流式调用、工具调用循环
  *
- * ★ Agent Loop 架构（v2 —— 代际守卫 + activeStreams）：
+ * Agent Loop 架构（v2）：
  *   runAI 使用 while 循环驱动 AI→工具→AI→... 链路。
- *   生命周期由 runAI 的 finally 块 **独占** 管理：
+ *   生命周期由 runAI 的 finally 块独占管理：
  *     - isStreaming 只在 runAI finally 中复位
  *     - 代际守卫（_runAIGeneration）防止旧 runAI 覆盖新状态
  *     - activeStreams 计数器提供双重保险
@@ -64,16 +64,14 @@ export function initChatArea(chatStore, settingsStore, toolStore, inputBarApi) {
   // 发送按钮点击
   sendBtn.addEventListener('click', handleSend);
 
-  // ★ 停止按钮 —— 只负责 abort，不直接修改 isStreaming / _sendLock
-  //   UI 状态复位由 runAI 的 finally 统一管理（代际守卫保护）
+  // 停止按钮 —— 只负责 abort，UI 状态由 runAI finally 统一管理
   stopBtn.addEventListener('click', () => {
     const { abortController } = _chatStore.getState();
     if (abortController) {
       abortController.abort();
       console.log('[stopBtn] 已发出 abort 信号');
     }
-    // 不再直接设 isStreaming=false / _sendLock=false —— 消除竞态
-    // runAI 的 finally 会在 abort 传播后自动复位
+    // runAI finally 会在 abort 传播后自动复位，消除竞态
   });
 
   // Enter 发送（Shift+Enter 换行）
@@ -106,7 +104,6 @@ async function handleSend() {
     return;
   }
 
-  // ★ 获取当前选中的图片
   const images = _inputBarApi ? _inputBarApi.getImages() : [];
   const hasImages = images.length > 0;
 
@@ -123,7 +120,7 @@ async function handleSend() {
   }
   const sessionId = _chatStore.getState().activeSessionId;
 
-  // ── 图片 base64 编码（用于 UI 缩略图 + 发给多模态模型） ──
+  // 图片 base64 编码（用于 UI 缩略图 + 发给多模态模型）
   let imageBase64List = [];
   if (hasImages) {
     try {
@@ -134,7 +131,7 @@ async function handleSend() {
     }
   }
 
-  // ★ 1. 如果有图片，先添加独立的图片卡片消息（与文字分开）
+  // 1. 有图片时先添加独立的图片卡片消息
   let imageMsgId = null;
   if (hasImages && imageBase64List.length > 0) {
     const imageMsg = {
@@ -142,14 +139,14 @@ async function handleSend() {
       role: 'user',
       content: '',                               // 图片卡片无文字
       images: imageBase64List,
-      _isImageCard: true,                        // 标记为图片独立卡片
+      _isImageCard: true,                       // 标记为图片独立卡片
       createdAt: new Date().toISOString(),
     };
     _chatStore.addMessage(sessionId, imageMsg);
     imageMsgId = imageMsg.id;
   }
 
-  // ★ 2. 添加文字消息（如果有的话）
+  // 2. 添加文字消息
   let userMsg;
   if (text) {
     userMsg = {
@@ -161,8 +158,7 @@ async function handleSend() {
     };
     _chatStore.addMessage(sessionId, userMsg);
   } else {
-    // 无文字但有图片：创建一条空的 user 消息占位
-    // buildMessages 会将 combinedUserContent 注入到此消息中
+    // 无文字但有图片：创建空 user 消息占位，buildMessages 会注入 combinedUserContent
     userMsg = {
       id: generateId(),
       role: 'user',
@@ -178,12 +174,12 @@ async function handleSend() {
   _inputBarApi?.clearImages();
   scrollToBottom();
 
-  // ★ 2. 组合后的用户内容（默认 = 原始文本，有图片则后续追加图片描述）
+  // 组合后的用户内容（有图片则后续追加图片描述）
   let userContent = text;
   let assistantMsgId;
 
   if (hasImages && imageBase64List.length > 0) {
-    // ★ 2a. 创建 "多模态模型 thinking" 占位消息，用户立刻看到
+    // 创建多模态 model thinking 占位消息
     const thinkingMsg = {
       id: generateId(),
       role: 'assistant',
@@ -204,7 +200,7 @@ async function handleSend() {
       try {
         const visionAbort = new AbortController();
 
-        // ★ 2b. 调用多模态模型（异步等待）
+        // 调用多模态模型识别图片
         const description = await analyzeImages(images, {
           visionApiUrl: settings.visionApiUrl,
           visionApiKey: settings.visionApiKey,
@@ -216,7 +212,7 @@ async function handleSend() {
           userContent = `[图片内容描述]\n${description}\n\n[用户问题]\n${text || '请根据图片内容解答以上题目'}`;
           console.log('[handleSend] 图片识别成功，合并后内容长度=%d', userContent.length);
 
-          // ★ 将图片描述存储到图片卡片消息中，用于 UI 显示
+          // 将图片描述存储到图片卡片消息中
           if (imageMsgId) {
             _chatStore.updateMessage(sessionId, imageMsgId, {
               imageDescription: description,
@@ -227,7 +223,7 @@ async function handleSend() {
           userContent = text;
         }
 
-        // ★ 2c. 识别完成 → thinking 消息转为正常 assistant 占位（准备接 runAI 流式输出）
+        // 识别完成 → thinking 消息转为正常 assistant 占位
         _chatStore.updateMessage(sessionId, assistantMsgId, {
           content: '',
           _isVisionThinking: false,
@@ -259,7 +255,7 @@ async function handleSend() {
       return;
     }
   } else {
-    // ★ 无图片：创建普通助手占位消息
+    // 无图片：创建普通助手占位消息
     const assistantMsg = {
       id: generateId(),
       role: 'assistant',
@@ -300,16 +296,15 @@ async function handleSend() {
  * @param {string} combinedUserMsgId - 对应的用户消息 ID，用于精确替换
  */
 async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null, combinedUserMsgId = null) {
-  // ★ 代际递增 —— 本次 runAI 拿到唯一代际 ID
+  // 代际递增
   _runAIGeneration++;
   const myGeneration = _runAIGeneration;
 
-  // ★ 活跃流计数 +1
+  // 活跃流计数 +1
   _activeStreams++;
   console.log('[runAI] 启动 generation=%d, _activeStreams=%d', myGeneration, _activeStreams);
 
-  // ★ isStreaming 在整个 Loop 开始时设为 true
-  //   所有退出路径（正常/异常/中止/早期返回）都由 finally 统一复位
+  // isStreaming 在整个 Loop 开始时设为 true，所有退出路径由 finally 统一复位
   const abortController = new AbortController();
   _chatStore.setState({ isStreaming: true, abortController });
 
@@ -348,8 +343,7 @@ async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null,
 
       let currentContent = '';
 
-      // ── 单次 SSE 请求 ──────────────────────────────────────────────
-      // ★ createStream 不再有 onStreamEnd —— 生命周期由本函数 finally 独占
+      // createStream 不再有 onStreamEnd，生命周期由 finally 独占
       const streamResult = await createStream(
         messages,
         registry.getAllSchemas(),
@@ -374,9 +368,8 @@ async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null,
         abortController.signal
       );
       const { toolCalls, emptyResponse } = streamResult;
-      // ── SSE 请求结束 ───────────────────────────────────────────────
 
-      // ★ 剥离 GLM-4.5 思维链标签：防止 &lt;/think&gt; 残留污染后续 API 请求
+      // 剥离 GLM-4.5 思维链标签，防止 &lt;/think&gt; 残留污染后续 API 请求
       if (currentContent && currentContent.includes('think>')) {
         const cleaned = stripThinkContent(currentContent);
         if (cleaned !== currentContent) {
@@ -386,7 +379,7 @@ async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null,
         }
       }
 
-      // ★ 空响应检测：API 返回 choices:[] + completion_tokens:0
+      // 空响应检测：API 返回 choices:[] + completion_tokens:0
       if (emptyResponse) {
         console.warn('[runAI] ★ API 返回空响应 (choices:[])，可能是消息格式问题');
         if (depth === 0) {
@@ -396,8 +389,7 @@ async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null,
             _isLocalError: true,
           });
         } else {
-          // ★ 工具调用后的空响应 → 基于实际工具结果生成有意义的回复
-          //   不再使用 _isSynthetic + 过滤，因为过滤会导致 tool→user 非法序列
+          // 工具调用后的空响应 → 基于实际工具结果生成回复
           const fallbackContent = _buildFallbackResponse(sessionId);
           _chatStore.updateMessage(sessionId, currentAssistantMsgId, {
             content: fallbackContent,
@@ -413,7 +405,7 @@ async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null,
         const currentSession = _chatStore.getState().sessions.find((s) => s.id === sessionId);
         const currentMsg = currentSession?.messages.find((m) => m.id === currentAssistantMsgId);
 
-        // ★ 确保存储的消息也是清理后的版本
+        // 确保存储的消息也是清理后的版本
         if (currentMsg && currentContent) {
           const finalContent = stripThinkContent(currentContent);
           if (!finalContent) {
@@ -443,20 +435,19 @@ async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null,
         break; // Agent Loop 正常结束
       }
 
-      // ── 有工具调用：执行工具，追加结果，继续下一轮 loop ────────────
+      // 执行工具调用
       console.log('[runAI] depth=%d 收到 %d 个工具调用:', depth, toolCalls.length,
         toolCalls.map((tc) => tc.function.name));
 
-      // 更新当前助手消息：保留 AI 文本 + 记录 tool_calls
-      // ★ 不再清空 content！AI 可能在 tool_calls 的同时返回文本（如"我来帮你画一个图"）
+      // 不覆盖 AI 文本：AI 可能在 tool_calls 的同时返回文本（如"我来帮你画一个图"）
       console.log('[runAI] 保留助手文本 content=%s (len=%d)', currentContent.substring(0, 50), currentContent.length);
       _chatStore.updateMessage(sessionId, currentAssistantMsgId, {
-        content: currentContent, // ★ 保留 AI 返回的文本，不再设为 ''
+        content: currentContent,
         toolCalls: [...toolCalls],
         isStreaming: false,
       });
 
-      // 逐个执行工具（★ 每个工具执行后都检查 abort 信号，提升响应性）
+      // 逐个执行工具，每个工具执行后检查 abort 信号
       for (const tc of toolCalls) {
         if (abortController.signal.aborted) {
           console.log('[runAI] 工具执行期间收到中止信号，退出');
@@ -515,9 +506,7 @@ async function runAI(sessionId, firstAssistantMsgId, combinedUserContent = null,
       _isLocalError: true,
     });
   } finally {
-    // ★★ 核心：代际守卫保护的状态复位 ★★
-    // 只有当前 runAI 是最新一代时，才允许复位 isStreaming。
-    // 这防止了：停止按钮 → 用户快速发新消息 → 旧 runAI finally 覆盖新状态
+    // 代际守卫保护的状态复位：只有当前 runAI 是最新一代时才允许复位 isStreaming
     _activeStreams--;
     console.log('[runAI] finally generation=%d, _activeStreams=%d', myGeneration, _activeStreams);
 
@@ -622,15 +611,15 @@ function buildMessages(sessionId, currentAssistantMsgId, combinedUserContent = n
       ) {
         return false;
       }
-      // ★ 过滤客户端生成的错误消息 —— 这些不是 AI 的真实回复，不应发给 API
+      // 过滤客户端生成的错误消息
       if (m._isLocalError) {
         return false;
       }
-      // ★ 过滤多模态 thinking 占位消息 —— 不应发给 API
+      // 过滤多模态 thinking 占位消息
       if (m._isVisionThinking) {
         return false;
       }
-      // ★ 过滤图片独立卡片消息 —— 图片已通过多模态模型转为文字描述，图片卡片不应发给 API
+      // 过滤图片独立卡片消息（图片已转为文字描述）
       if (m._isImageCard) {
         return false;
       }
@@ -639,8 +628,8 @@ function buildMessages(sessionId, currentAssistantMsgId, combinedUserContent = n
     .filter((m) => m.role !== 'tool' || m.toolResult)
     .map((m) => {
       if (m.role === 'user') {
-        // ★ 图片用户消息：使用 combinedUserContent（包含图片描述 + 用户问题的合并内容）
-        //   combinedUserMsgId 指向文字用户消息（图片已拆分为独立卡片并被过滤）
+        // 图片用户消息：使用 combinedUserContent（含图片描述 + 用户问题）
+        // combinedUserMsgId 指向文字用户消息（图片已拆分为独立卡片并被过滤）
         const shouldCombine = combinedUserContent && m.id === combinedUserMsgId;
         const useContent = shouldCombine
           ? combinedUserContent
@@ -648,25 +637,17 @@ function buildMessages(sessionId, currentAssistantMsgId, combinedUserContent = n
         return { role: 'user', content: stripThinkContent(useContent) };
       }
       if (m.role === 'assistant') {
-        // ★ v8 修复：保留 assistant 原始 content，不再强制设为 null
-        //   实测证明（2025-06-10）：GLM-4.5 收到 content:null 的 assistant 消息后，
-        //   返回空响应（choices:[] + completion_tokens:0），即使 OpenAI 规范允许 null。
-        //   根因推断：GLM 将 null content 视为无效值，导致 assistant→tool 序列被忽略。
-        //
-        //   修复策略：
-        //   - GLM 首轮返回了文本（如"我来帮你画图"）→ 保留原文
-        //   - GLM 首轮没返回文本（content 为空）→ 生成有意义的占位文本
-        //   - 不再硬编码 null，让 GLM 能正确理解上下文并继续多轮对话
+        // 保留 assistant 原始 content，不强制设为 null
+        // GLM-4.5 收到 content:null 的 assistant 消息后会返回空响应
+        // 有 tool_calls 时优先保留原始内容，为空则生成占位文本
         const rawContent = normalizeContent(m.content);
         if (m.toolCalls && m.toolCalls.length > 0) {
-          // 有 tool_calls 时：优先保留原始内容，为空则生成占位文本
+          // 有 tool_calls 时优先保留原始内容
           if (rawContent && rawContent.trim()) {
-            // GLM 返回了文本 → 直接使用（最佳情况）
             var apiContent = rawContent;
           } else {
-            // GLM 没返回文本 → 根据 tool 类型生成占位内容，避免 null
             var tcNames = m.toolCalls.map(tc => tc.function?.name || 'unknown').join(',');
-            console.log('[buildMessages] ★ assistant 有 tool_calls 但无文本内容，生成占位文本 (tools=%s)', tcNames);
+            console.log('[buildMessages] assistant 有 tool_calls 但无文本内容，生成占位文本 (tools=%s)', tcNames);
             var apiContent = '好的，我来为您执行相关操作。';
           }
         } else {
@@ -674,8 +655,7 @@ function buildMessages(sessionId, currentAssistantMsgId, combinedUserContent = n
         }
         const msg = { role: 'assistant', content: stripThinkContent(apiContent) };
         if (m.toolCalls && m.toolCalls.length > 0) {
-          // ★ 保留 type:'function' —— GLM API 文档示例明确包含此字段
-          //   上一版错误地去掉了它，导致 API 返回空响应
+          // 保留 type:'function' —— GLM API 文档明确包含此字段
           msg.tool_calls = m.toolCalls.map(tc => {
             const cleaned = {
               id: tc.id,
@@ -697,12 +677,9 @@ function buildMessages(sessionId, currentAssistantMsgId, combinedUserContent = n
       }
       if (m.role === 'tool') {
         const r = m.toolResult;
-        // ★ Tool content 使用自然语言描述（非 JSON）
-        //   原因：GLM-4.5 收到 JSON 格式的 tool content 后无法理解工具执行结果，
-        //         导致对后续 user 消息返回空响应（静默拒绝）
-        //   自然语言让 GLM 能理解"工具做了什么"，从而正常回复下一条用户消息
+        // Tool content 使用自然语言描述（非 JSON），GLM-4.5 需要自然语言才能理解工具结果
         let toolContent = _buildToolNaturalContent(m.toolCallId, r);
-        // ★ 确保 tool_call_id 非空（空 id 会导致 API 拒绝整个请求）
+        // 确保 tool_call_id 非空
         const toolCallId = m.toolCallId || 'call_' + Math.random().toString(36).slice(2, 10);
         if (!m.toolCallId) {
           console.warn('[buildMessages] tool 消息的 toolCallId 为空，生成 fallback');
@@ -713,10 +690,10 @@ function buildMessages(sessionId, currentAssistantMsgId, combinedUserContent = n
     })
     .filter(Boolean);
 
-  // ★ 消息压缩：确保 API 消息序列符合角色交替规范
+  // 消息压缩：确保 API 消息序列符合角色交替规范
   const compacted = compactMessages(result);
 
-  // ★ 关键日志：输出发送给 API 的消息序列，帮助排查格式问题
+  // 日志：输出发送给 API 的消息序列
   console.log('[buildMessages] 构建消息序列 (%d 条, 压缩后 %d 条):', result.length, compacted.length);
   for (let i = 0; i < compacted.length; i++) {
     const m = compacted[i];
@@ -739,13 +716,9 @@ function buildMessages(sessionId, currentAssistantMsgId, combinedUserContent = n
 /**
  * 剥离 GLM-4.5 思维链标签 &lt;think&gt;...&lt;/think&gt;
  *
- * ★ 关键修复（2025-06-10）：
- *   GLM-4.5 是推理模型，输出格式为 &lt;think&gt;内部推理&lt;/think&gt;最终回复。
- *   GLM API 代理在流式传输时会剥离 &lt;think&gt; 及其内容，但有时会漏掉 &lt;/think&gt; 闭合标签。
- *   当这个孤立的 &lt;/think&gt; 随消息历史发回 API 时，GLM-4.5 会因状态混乱而返回空响应
- *   （choices:[], completion_tokens:0），即"静默拒绝"。
- *
- *   本函数确保所有消息在进入 API 前已完全清除思维链标签。
+ * GLM-4.5 是推理模型，输出格式为 &lt;think&gt;内部推理&lt;/think&gt;最终回复。
+ * API 代理在流式传输时可能漏掉 &lt;/think&gt; 闭合标签，当孤立标签随历史发回时，
+ * GLM-4.5 会返回空响应。本函数确保所有消息在进入 API 前已清除思维链标签。
  *
  * @param {string} content - 原始消息内容
  * @returns {string} 清理后的内容
@@ -763,9 +736,8 @@ function stripThinkContent(content) {
 /**
  * 将工具执行结果转换为自然语言描述
  *
- * ★ 关键：GLM-4.5 需要自然语言格式的 tool content 才能正确理解工具执行结果。
- *   JSON 格式（如 {"status":"success",...}）会导致 GLM 无法理解上下文，
- *   进而对后续 user 消息返回空响应（静默拒绝）。
+ * GLM-4.5 需要自然语言格式的 tool content 才能正确理解工具执行结果，
+ * JSON 格式会导致 GLM 无法理解上下文并返回空响应。
  *
  * @param {string} toolCallId - 工具调用 ID
  * @param {Object} result - 工具执行结果 { status, componentType, props?, error? }
@@ -826,10 +798,6 @@ function _buildToolNaturalContent(toolCallId, result) {
  *   3. assistant(tool_calls) 后必须跟 tool，否则跳过孤立的 assistant(tool_calls)
  *   4. 去除首条非 system/user 的消息
  *
- * ★ 说明：
- *   正常流程中 assistant 消息始终存在于 tool 和 user 之间，
- *   不再依赖 OpenAI 规范中的 tool→user 捷径。
- *
  * @param {Array} messages - 原始 API 消息数组
  * @returns {Array} 压缩后的消息数组
  */
@@ -843,7 +811,7 @@ function compactMessages(messages) {
 
     if (msg.role === 'user') {
       if (lastMsg && lastMsg.role === 'user') {
-        // ★ 合并连续 user 消息
+        // 合并连续 user 消息
         const merged = (lastMsg.content || '') + '\n' + (msg.content || '');
         lastMsg.content = merged.trim();
         console.log('[compactMessages] 合并连续 user 消息: [%d]+[%d]', i - 1, i);
@@ -853,7 +821,7 @@ function compactMessages(messages) {
     } else if (msg.role === 'assistant') {
       result.push({ ...msg });
     } else if (msg.role === 'tool') {
-      // ★ tool 消息必须紧跟在 assistant(tool_calls) 之后
+      // tool 消息必须紧跟在 assistant(tool_calls) 之后
       if (!lastMsg || lastMsg.role !== 'assistant' || !lastMsg.tool_calls) {
         console.warn('[compactMessages] tool 消息 [%d] 前面没有 assistant(tool_calls)，跳过', i);
         continue;
@@ -862,7 +830,7 @@ function compactMessages(messages) {
     }
   }
 
-  // ★ 确保首条消息是 user 或 system
+  // 确保首条消息是 user 或 system
   while (result.length > 0 && result[0].role !== 'user' && result[0].role !== 'system') {
     console.warn('[compactMessages] 首条消息 role=%s 不合规，移除', result[0].role);
     result.shift();

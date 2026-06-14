@@ -1,11 +1,11 @@
 /**
  * 消息列表组件 —— 渲染当前会话的消息并自动滚动
  *
- * ★ 性能优化策略：
- *   - 非流式期间：全量重绘（简单可靠）
+ * 性能优化策略：
+ *   - 非流式期间：全量重绘
  *   - 流式期间：增量更新
- *   - 关键变更（tool_calls 被添加、消息状态从 streaming→非streaming）→ 重建该消息 DOM
- *   - 异步加载的数学组件（function-plot 等）只在非必要时不重建
+ *   - 关键变更（tool_calls 添加、isStreaming 变化）→ 重建消息 DOM
+ *   - 异步加载的数学组件只在非必要时不重建
  */
 import { createMessageBubble } from './message-bubble.js';
 import { renderMarkdown } from './markdown-renderer.js';
@@ -55,14 +55,14 @@ export function initMessageList(chatStore, toolStore) {
     }
   });
 
-  // ★ 监听工具执行状态变化 → 工具开始/完成时立即触发渲染
-  //   工具执行在 Agent Loop 中间完成，toolStore 变化不会触发 chatStore 更新，
-  //   必须独立订阅才能让 UI 及时反映"执行中→已完成→渲染图表"的状态转换。
+  // 监听工具执行状态变化 → 工具开始/完成时立即触发渲染
+  // 工具执行在 Agent Loop 中间完成，toolStore 变化不会触发 chatStore 更新，
+  // 必须独立订阅才能让 UI 及时反映状态转换。
   toolStore.subscribe('executingTools', (_newVal, _oldVal) => {
     scheduleRender();
   });
 
-  // ★ 首次渲染：页面刷新后需主动渲染当前活动会话的消息
+  // 首次渲染：页面刷新后需主动渲染当前活动会话的消息
   scheduleRender();
 }
 
@@ -84,9 +84,7 @@ function scheduleRender() {
 /**
  * 渲染当前会话的所有消息
  *
- * ★ 核心策略：
- *   流式期间 → 增量更新
- *   非流式期间 → 全量重绘（保证一致性）
+ * 核心策略：流式期间增量更新，非流式期间全量重绘
  */
 function renderMessages() {
   const messageList = document.getElementById('message-list');
@@ -102,10 +100,10 @@ function renderMessages() {
   const messages = session.messages;
 
   if (_isStreamingPhase) {
-    // ★ 流式期间：增量更新
+    // 流式期间：增量更新
     renderIncremental(messageList, messages);
   } else {
-    // ★ 非流式期间：全量重绘
+    // 非流式期间：全量重绘
     renderFull(messageList, messages);
   }
 
@@ -186,7 +184,7 @@ function renderIncremental(messageList, messages) {
       // 已有消息 → 检测属性变化
       const changed = detectChange(message);
       if (changed) {
-        // ★ 属性变化（tool_calls 添加、isStreaming 变化等）→ 重建该消息 DOM
+        // 属性变化（tool_calls 添加、isStreaming 变化等）→ 重建消息 DOM
         const oldWrapper = existingMap.get(message.id);
         const newBubble = createMessageBubble(message, _toolStore, _chatStore);
         if (newBubble && oldWrapper) {
@@ -195,7 +193,7 @@ function renderIncremental(messageList, messages) {
           updateSnapshot(message);
         }
       } else if (message.role === 'assistant' && message.isStreaming && message.content) {
-        // ★ 纯文本增量 → 只更新 .message-bubble 的内容
+        // 纯文本增量 → 只更新 .message-bubble 的内容
         const wrapper = existingMap.get(message.id);
         if (wrapper) {
           updateStreamingText(wrapper, message);
@@ -206,8 +204,7 @@ function renderIncremental(messageList, messages) {
 }
 
 /**
- * 更新消息属性快照
- * ★ 同时记录 tool 执行状态，以便 detectChange 检测工具结果就绪
+ * 更新消息属性快照，同时记录 tool 执行状态以便 detectChange 检测工具结果就绪
  */
 function updateSnapshot(message) {
   const toolResults = {};
@@ -227,8 +224,7 @@ function updateSnapshot(message) {
 }
 
 /**
- * 检测消息属性是否发生变化
- * ★ 同时检测 tool 执行状态变化（执行中→已完成→渲染图表）
+ * 检测消息属性是否发生变化（同时检测 tool 执行状态变化）
  * @returns {boolean} true 表示需要重建 DOM
  */
 function detectChange(message) {
@@ -245,7 +241,7 @@ function detectChange(message) {
   // isStreaming 从 true → false → 需要重建（移除光标等）
   if (prev.isStreaming !== currentIsStreaming) return true;
 
-  // ★ tool 执行状态变化 → 需要重建（"等待中"→"执行中"→渲染图表）
+  // tool 执行状态变化 → 需要重建
   if (currentToolCallsCount > 0) {
     const prevResults = prev.toolResults || {};
     for (let i = 0; i < message.toolCalls.length; i++) {
@@ -261,7 +257,7 @@ function detectChange(message) {
   // 但小增量（流式 delta）不需要重建
   if (Math.abs(prev.contentLen - currentContentLen) > 100) return true;
 
-  // ★ 图片描述从无到有 → 需要重建（显示展开按钮）
+  // 图片描述从无到有 → 需要重建
   if (prev.hasImageDescription !== !!(message.imageDescription)) return true;
 
   return false;

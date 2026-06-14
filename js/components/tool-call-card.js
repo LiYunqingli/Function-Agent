@@ -1,6 +1,6 @@
 /**
  * 工具调用卡片组件 —— 展示工具调用的名称、参数和渲染结果
- * ★ 全屏支持：卡片可放大至全屏查看，ESC / 关闭按钮退出，附带平滑缩放动画
+ * 支持全屏查看（ESC/关闭按钮退出，带平滑缩放动画）
  */
 import { TOOL_COMPONENT_MAP, TOOL_ICONS } from '../config.js';
 import { formatToolName } from '../utils/formatters.js';
@@ -24,7 +24,7 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
   const componentName = TOOL_COMPONENT_MAP[toolName] || 'unknown';
   const icon = TOOL_ICONS[toolName] || '🔧';
 
-  // ===== Header =====
+  // Header
   const header = document.createElement('div');
   header.className = 'tool-call-header';
 
@@ -39,7 +39,7 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
   const statusBadge = document.createElement('span');
   statusBadge.className = 'tool-call-status';
 
-  // ★ 全屏按钮（仅成功结果时显示）
+  // 全屏按钮（仅成功结果时显示）
   const fullscreenBtn = document.createElement('button');
   fullscreenBtn.className = 'tool-call-fullscreen-btn';
   fullscreenBtn.innerHTML = '⛶';
@@ -52,11 +52,11 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
   header.appendChild(fullscreenBtn);
   card.appendChild(header);
 
-  // ===== Body =====
+  // Body
   const body = document.createElement('div');
   body.className = 'tool-call-body';
 
-  // ===== 参数折叠区 =====
+  // 参数折叠区
   const paramsSection = document.createElement('details');
   paramsSection.style.cssText = 'margin-bottom:12px;';
   const paramsSummary = document.createElement('summary');
@@ -78,7 +78,7 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
 
   card.appendChild(body);
 
-  // ===== 渲染结果 =====
+  // 渲染结果
   if (!toolResult) {
     // 执行中状态
     const execState = toolStore?.getState().executingTools[toolCall.id];
@@ -92,13 +92,13 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
   } else if (toolResult.status === 'success') {
     statusBadge.classList.add('success');
     statusBadge.textContent = '已完成';
-    // ★ 显示全屏按钮并绑定事件
+    // 显示全屏按钮并绑定事件
     fullscreenBtn.style.display = '';
     fullscreenBtn.addEventListener('click', (e) => {
       e.stopPropagation(); // 不触发 header 折叠
       toggleFullscreen(card);
     });
-    // ★ 双击卡片进入全屏
+    // 双击卡片进入全屏
     card.addEventListener('dblclick', (e) => {
       // 不拦截 details/参数区的双击
       if (e.target.closest('details')) return;
@@ -124,11 +124,7 @@ export function createToolCallCard(toolCall, toolResult, toolStore) {
     header.style.opacity = expanded ? '1' : '0.7';
   });
 
-  // ═══════════════════════════════════════════════════════
-  // ★ 焦点系统：防止图表滚动劫持
-  //   默认：滚动穿透到页面。点击卡片 → 聚焦（边框高亮 + 图表交互激活）
-  //   鼠标移出 → 失焦（恢复穿透）
-  // ═══════════════════════════════════════════════════════
+  // 焦点系统：防止图表滚动劫持，默认滚动穿透到页面
   let isFocused = false;
 
   // 点击卡片 body → 激活聚焦
@@ -226,9 +222,7 @@ function renderMathResult(container, componentName, props, toolCallId) {
   });
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ★ 全屏功能
-// ═══════════════════════════════════════════════════════════════
+// 全屏功能
 
 /**
  * 切换卡片全屏状态
@@ -253,7 +247,7 @@ function enterFullscreen(card) {
   }
   _activeFullscreen = card;
 
-  // ── FLIP: First ──
+  // FLIP: First
   const firstRect = card.getBoundingClientRect();
 
   // 保存原始 DOM 位置，插入占位元素防止布局塌陷
@@ -276,8 +270,7 @@ function enterFullscreen(card) {
     zIndex: card.style.zIndex,
   };
 
-  // ── FLIP: Invert ──
-  // 将卡片移到 body 下并固定在原位
+  // FLIP: Invert
   document.body.appendChild(card);
   card.style.position = 'fixed';
   card.style.top = firstRect.top + 'px';
@@ -288,13 +281,13 @@ function enterFullscreen(card) {
   card.style.zIndex = '9999';
   card.style.transition = 'none'; // 先禁用过渡
 
-  // ── 创建 backdrop ──
+  // 创建 backdrop
   const backdrop = document.createElement('div');
   backdrop.className = 'fullscreen-backdrop';
   backdrop.addEventListener('click', () => exitFullscreen(card));
   document.body.appendChild(backdrop);
 
-  // ── 创建关闭按钮 ──
+  // 创建关闭按钮
   const closeBtn = document.createElement('button');
   closeBtn.className = 'fullscreen-close-btn';
   closeBtn.innerHTML = '✕';
@@ -308,7 +301,7 @@ function enterFullscreen(card) {
   card._fsBackdrop = backdrop;
   card._fsCloseBtn = closeBtn;
 
-  // ── ESC 处理 ──
+  // ESC 处理
   card._fsEscHandler = (e) => {
     if (e.key === 'Escape') {
       exitFullscreen(card);
@@ -319,8 +312,7 @@ function enterFullscreen(card) {
   // 禁止 body 滚动
   document.body.style.overflow = 'hidden';
 
-  // ── FLIP: Play ──
-  // 强制重排后启用过渡并播放到真正的全屏 (100vw × 100vh, 无边距)
+  // FLIP: Play
   card.offsetHeight; // force reflow
   card.style.transition =
     'top 0.38s cubic-bezier(0.22,0.61,0.36,1),' +
@@ -337,8 +329,7 @@ function enterFullscreen(card) {
     backdrop.classList.add('active');
   });
 
-  // ── Plotly 自适应 ──
-  // 等过渡完成后 resize
+  // Plotly 自适应，等过渡完成后 resize
   setTimeout(() => resizePlotlyInElement(card), 420);
 }
 
@@ -356,7 +347,7 @@ function exitFullscreen(card) {
   const canRestore = restore?.parent?.isConnected &&
     placeholder?.isConnected;
 
-  // ★ 捕获目标矩形（在任何 DOM 变更之前）
+  // 捕获目标矩形（在任何 DOM 变更之前）
   let targetRect;
   if (canRestore) {
     targetRect = placeholder.getBoundingClientRect();
@@ -370,7 +361,7 @@ function exitFullscreen(card) {
     };
   }
 
-  // ★ 立即清理 UI 层（backdrop 直接移除，不 fade-out）
+  // 立即清理 UI 层
   if (backdrop?.isConnected) backdrop.remove();
   if (closeBtn?.isConnected) closeBtn.remove();
   document.body.style.overflow = '';
@@ -379,9 +370,7 @@ function exitFullscreen(card) {
     document.removeEventListener('keydown', card._fsEscHandler);
   }
 
-  // ★ 仅动画化 top/left/width/height 四个几何属性
-  //    不使用 `transition: all` —— 避免 border-radius/box-shadow/max-width/display 等被意外动画化
-  //    不移除 fullscreen 类 —— 保持 position:fixed !important 直到 snapBack
+  // 仅动画化 top/left/width/height，避免 border-radius/box-shadow 等属性被意外动画化
   card.style.transition =
     'top 0.35s cubic-bezier(0.22,0.61,0.36,1),' +
     'left 0.35s cubic-bezier(0.22,0.61,0.36,1),' +
@@ -392,7 +381,7 @@ function exitFullscreen(card) {
   card.style.width = Math.max(targetRect.width, 0) + 'px';
   card.style.height = Math.max(targetRect.height, 0) + 'px';
 
-  // ── 动画结束后原子化恢复 DOM ──
+  // 动画结束后原子化恢复 DOM
   let finished = false;
   const snapBack = () => {
     if (finished) return;
@@ -454,7 +443,7 @@ function restoreCardStyleKeepTransition(card, restore) {
   card.style.height = restore.height || '';
   card.style.margin = restore.margin || '';
   card.style.zIndex = restore.zIndex || '';
-  // ★ 不清除 transition —— 由 snapBack 在 reflow 后手动清除
+  // 不清除 transition，由 snapBack 在 reflow 后手动清除
   card.style.transform = '';
   card.style.opacity = '';
 }

@@ -1,10 +1,7 @@
 /**
  * 消息气泡组件 —— 根据消息角色创建不同的气泡
  *
- * ★ 图片独立卡片策略：
- *   - 有图片的用户消息会被拆分为多条：一条纯图片消息 + 一条纯文字消息
- *   - 纯图片消息使用 _isImageCard 标记，渲染为独立卡片
- *   - 图片识别完成后，imageDescription 存入图片消息，渲染可展开的描述区域
+ * 有图片的用户消息拆分为纯图片消息 + 纯文字消息，各自独立渲染
  */
 import { renderMarkdown } from './markdown-renderer.js';
 import { createToolCallCard } from './tool-call-card.js';
@@ -29,17 +26,15 @@ export function createMessageBubble(message, toolStore, chatStore) {
   wrapper.dataset.messageId = message.id;
 
   if (message.role === 'user') {
-    // ★ 图片独立卡片（_isImageCard 标记）
     if (message._isImageCard && message.images && message.images.length > 0) {
       return createUserImageCard(message);
     }
 
-    // ★ 跳过空内容的 user 消息（仅图片无文字时创建的占位消息）
     if (!message.content || !message.content.trim()) {
       return null;
     }
 
-    // ★ 普通文字消息（图片已拆分为独立卡片，此处不再包含图片）
+    // 图片已拆分为独立卡片，此处不包含图片
     const bubble = document.createElement('div');
     bubble.className = 'message-bubble';
 
@@ -52,7 +47,6 @@ export function createMessageBubble(message, toolStore, chatStore) {
 
     wrapper.appendChild(bubble);
   } else if (message.role === 'assistant') {
-    // ★ 多模态 thinking 占位 —— 显示特殊的 loading 指示器
     if (message._isVisionThinking) {
       const bubble = document.createElement('div');
       bubble.className = 'message-bubble vision-thinking-bubble';
@@ -69,12 +63,10 @@ export function createMessageBubble(message, toolStore, chatStore) {
       return wrapper;
     }
 
-    // ★ 判断是否有文本内容（非空且非纯空白）
     const hasTextContent = message.content && message.content.trim();
     const hasToolCalls = message.toolCalls && message.toolCalls.length > 0;
 
-    // ★ 只在有文本内容时才创建 .message-bubble
-    //   避免无文本 + 有 tool_calls 时出现空气泡
+    // 有文本或既无文本也无工具调用时创建 .message-bubble（避免无文本+有工具调用时出现空气泡）
     if (hasTextContent || (!hasToolCalls && !hasTextContent)) {
       const bubble = document.createElement('div');
       bubble.className = 'message-bubble';
@@ -86,7 +78,7 @@ export function createMessageBubble(message, toolStore, chatStore) {
         bubble.appendChild(contentDiv);
       }
 
-      // 如果正在流式输出且无内容，显示打字光标
+      // 无内容时显示打字光标
       if (message.isStreaming && !hasTextContent) {
         const cursor = document.createElement('span');
         cursor.className = 'cursor-blink';
@@ -132,18 +124,18 @@ export function createMessageBubble(message, toolStore, chatStore) {
 }
 
 /**
- * 创建图片独立卡片 —— 图片作为单独的消息气泡显示
+ * 创建图片独立卡片
  *
- * ★ 结构（重构：描述区域独立于蓝色图片卡片，不再嵌套其中）
+ * 结构：
  *   .message-wrapper.user.fade-in
- *     .image-card                         (蓝色气泡 — 仅包裹图片)
+ *     .image-card              (蓝色气泡 — 仅包裹图片)
  *       .image-card-grid
- *         img.user-message-image          (可点击查看大图)
- *     .image-description-area             (独立区域 — 蓝色气泡之外)
- *       .image-description-toggle         (展开/折叠按钮)
- *       .image-description-content        (描述内容，可展开/折叠)
+ *         img.user-message-image
+ *     .image-description-area  (独立区域 — 蓝色气泡之外)
+ *       .image-description-toggle
+ *       .image-description-content
  *
- * @param {Object} message - 用户消息对象（含 images 和可选的 imageDescription）
+ * @param {Object} message - 含 images 和可选 imageDescription
  * @returns {HTMLElement}
  */
 function createUserImageCard(message) {
@@ -151,7 +143,7 @@ function createUserImageCard(message) {
   wrapper.className = `message-wrapper user fade-in`;
   wrapper.dataset.messageId = message.id;
 
-  // ===== 图片卡片（蓝色气泡，仅包裹图片网格） =====
+  // 图片卡片（蓝色气泡，仅包裹图片网格）
   const card = document.createElement('div');
   card.className = 'image-card';
 
@@ -178,7 +170,7 @@ function createUserImageCard(message) {
   card.appendChild(imageGrid);
   wrapper.appendChild(card);
 
-  // ===== 图片描述区域（蓝色图片卡片之外，视觉独立） =====
+  // 图片描述区域（蓝色图片卡片之外）
   const description = message.imageDescription;
   if (description) {
     const descArea = document.createElement('div');
@@ -209,7 +201,7 @@ function createUserImageCard(message) {
     descArea.appendChild(content);
     wrapper.appendChild(descArea);
   } else if (message._isVisionThinking !== undefined) {
-    // 图片识别尚未完成 —— 不显示任何描述区域
+    // 图片识别尚未完成，不显示描述区域
   }
 
   return wrapper;
@@ -218,18 +210,18 @@ function createUserImageCard(message) {
 /**
  * 查找工具调用对应的工具结果
  *
- * ★ 双层查找策略：
- *   1. 优先查 toolStore（运行时，有执行状态+耗时等实时信息）
- *   2. 回退查 chatStore 中的 tool 消息（页面刷新后 toolStore 为空但 chatStore 已持久化）
+ * 双层查找策略：
+ *   1. toolStore（运行时，有实时状态）
+ *   2. chatStore（页面刷新后 toolStore 为空但 chatStore 已持久化）
  *
  * @param {Object} assistantMessage - 助手消息
  * @param {string} toolCallId - 工具调用 ID
  * @param {Object} toolStore
- * @param {Object} chatStore - ChatStore 单例（回退查找用）
+ * @param {Object} chatStore - ChatStore 单例
  * @returns {Object|null}
  */
 function findToolResult(assistantMessage, toolCallId, toolStore, chatStore) {
-  // 1. 从 toolStore 的执行状态中查找（运行时优先，含实时状态）
+  // 1. 从 toolStore 查找（运行时优先）
   const executingTools = toolStore.getState().executingTools;
   if (executingTools[toolCallId]) {
     const exec = executingTools[toolCallId];
@@ -243,8 +235,7 @@ function findToolResult(assistantMessage, toolCallId, toolStore, chatStore) {
     return null;
   }
 
-  // 2. ★ 回退：从 chatStore 的持久化 tool 消息中查找
-  //    页面刷新后 toolStore 为空，但 tool 消息的 toolResult 字段已持久化到 localStorage
+  // 2. 回退：从 chatStore 持久化 tool 消息查找（页面刷新后 toolStore 为空）
   if (chatStore) {
     const session = chatStore.getActiveSession();
     if (session && session.messages) {
