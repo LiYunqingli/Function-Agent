@@ -3,7 +3,8 @@
 > AI 驱动的高等数学智能助手 —— 通过自然语言对话 + 可视化图形组件，让抽象数学概念变得直观可理解。
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Tools](https://img.shields.io/badge/LLM_Tools-24-orange.svg)
+![Tools](https://img.shields.io/badge/LLM_Tools-29-orange.svg)
+![Version](https://img.shields.io/badge/version-1.1-blue.svg)
 
 ## 产品定位
 
@@ -11,21 +12,23 @@ Function-Agent 面向高校学生，覆盖 **微积分、线性代数、概率�
 
 **核心特性**：
 - 自然语言问答，支持 Markdown + LaTeX 公式渲染
-- 24 个可视化工具组件，LLM 通过 Function Calling 自动调用
+- 29 个可视化工具组件，LLM 通过 Function Calling 自动调用
 - 纯前端架构，数据全部存于 localStorage，无需后端服务
 - 用户自带 API Key，零部署、零运维
+- 所有依赖库本地加载（`lib/` 目录），无需 CDN，完全离线可用
+- 收藏夹、学习统计、右键菜单、数学符号键盘等辅助功能
 
 ## 快速开始
 
 ### 1. 打开应用
 
-直接用浏览器打开 `index.html` 即可运行（需要网络环境加载 CDN 资源）：
+直接用浏览器打开 `index.html` 即可运行（所有依赖库已本地化，无需网络）：
 
 ```bash
 # 方式一：直接打开
 open index.html
 
-# 方式二：本地 HTTP 服务（推荐，避免部分浏览器 CORS 限制）
+# 方式二：本地 HTTP 服务（推荐，避免部分浏览器 ESM 限制）
 npx serve .
 # 或
 python -m http.server 8080
@@ -37,13 +40,17 @@ python -m http.server 8080
 
 | 配置项 | 说明 | 示例 |
 |--------|------|------|
-| API URL | OpenAI 兼容接口地址 | `https://api.openai.com/v1` |
+| API URL | OpenAI 兼容接口地址 | `https://api.deepseek.com` |
 | API Key | 你的 API 密钥 | `sk-...` |
-| Model | 模型名称 | `gpt-4o`、`qwen-plus`、`deepseek-chat` 等 |
+| Model | 模型名称 | `deepseek-chat`、`gpt-4o`、`qwen-plus`、`glm-4` 等 |
 
-> 支持任何兼容 OpenAI Function Calling 协议的 API 服务（OpenAI、DeepSeek、Qwen、Ollama 等）。
+> 支持任何兼容 OpenAI Function Calling 协议的 API 服务。默认预填 DeepSeek API 地址。
 
-### 3. 开始使用
+### 3. 配置图片识别（可选）
+
+如需上传数学题目图片让 AI 识别，需额外配置多模态模型（如 `qwen3.5-omni-plus`、`gpt-4o` 等）。
+
+### 4. 开始使用
 
 在输入框中输入数学问题，例如：
 - "求 lim(x→0) sin(x)/x"
@@ -51,6 +58,7 @@ python -m http.server 8080
 - "可视化矩阵 [[2,1],[1,2]] 的线性变换效果"
 - "正态分布 N(0,1) 的 PDF 和 CDF 是什么样子"
 - "帮我出一道关于不定积分的测验题"
+- "用抽认卡帮我记忆常见的导数公式"
 
 ## 技术架构
 
@@ -60,16 +68,16 @@ python -m http.server 8080
 
 ```
 ┌─────────────┐    ┌──────────────┐    ┌────────────┐    ┌─────────────┐
-│   schemas    │───▶│  definitions  │───▶│  executor   │───▶│  renderer   │
-│  (参数 Schema)│    │ (工具执行逻辑) │    │ (调用分发器) │    │ (前端渲染器) │
+│   schemas    │───▶│  definitions  │───▶│  registry   │───▶│  renderer   │
+│  (参数 Schema)│    │ (工具执行逻辑) │    │ (注册与分发) │    │ (前端渲染器) │
 └─────────────┘    └──────────────┘    └────────────┘    └─────────────┘
       │                   │                   │                  │
-  schemas.js      definitions/*.js      executor.js    components/math/*.js
+  schemas.js      definitions/*.js      registry.js    components/math/*.js
 ```
 
 1. **Schema** (`js/tools/schemas.js`) — OpenAI Function Calling 参数定义，描述 LLM 可调用的工具
 2. **Definition** (`js/tools/definitions/*.js`) — 工具执行逻辑，解析参数并返回渲染数据
-3. **Executor** (`js/tools/executor.js`) — 根据工具名分发给对应 definition
+3. **Registry** (`js/tools/registry.js`) — 工具注册表 + `executor.js` 调用分发
 4. **Renderer** (`js/components/math/*.js`) — 前端可视化渲染（Plotly / Canvas 2D / DOM）
 
 ### 核心模块
@@ -78,53 +86,70 @@ python -m http.server 8080
 js/
 ├── app.js                  # 应用入口，初始化各模块
 ├── config.js               # 全局配置（API、工具映射、图标等）
+├── prompt.js               # System Prompt 分段管理（角色/工具/规范/补充）
 │
 ├── tools/                  # 工具链层
-│   ├── schemas.js          # 24 个 Function Calling Schema
+│   ├── schemas.js          # 29 个 Function Calling Schema
 │   ├── register-all.js     # 工具注册中心
 │   ├── registry.js         # 工具注册表
 │   ├── executor.js         # 工具执行器
-│   └── definitions/        # 各工具的执行逻辑
+│   └── definitions/        # 各工具的执行逻辑（29 个）
 │       ├── plot-function.js
 │       ├── animate-limit.js
 │       ├── plot-matrix-transform.js
-│       └── ... (24 个)
+│       ├── show-formula-handbook.js    # 新增
+│       ├── show-flashcards.js          # 新增
+│       ├── show-error-analyzer.js      # 新增
+│       ├── show-interactive-proof.js   # 新增
+│       ├── show-concept-map.js         # 新增
+│       └── ... (29 个)
 │
 ├── components/             # UI 组件层
-│   ├── chat-area.js        # 聊天主区域
-│   ├── message-list.js    # 消息列表
+│   ├── chat-area.js        # 聊天主区域（Agent Loop 核心）
+│   ├── message-list.js     # 消息列表
 │   ├── message-bubble.js   # 消息气泡
-│   ├── input-bar.js       # 输入栏
-│   ├── sidebar.js         # 侧边栏（会话管理）
-│   ├── settings-dialog.js # 设置弹窗
+│   ├── input-bar.js        # 输入栏（含图片上传）
+│   ├── sidebar.js          # 侧边栏（会话管理）
+│   ├── settings-dialog.js  # 设置弹窗（含 Prompt 分段编辑）
 │   ├── tool-call-card.js   # 工具调用卡片（聚焦/全屏）
 │   ├── markdown-renderer.js # Markdown + LaTeX 渲染
-│   └── math/              # 数学可视化渲染器
+│   ├── favorites-panel.js  # 收藏夹面板  ⬅ 新增
+│   ├── learning-stats-panel.js  # 学习统计面板  ⬅ 新增
+│   ├── context-menu.js     # 自定义右键菜单  ⬅ 新增
+│   ├── math-symbol-keyboard.js # 数学符号键盘  ⬅ 新增
+│   └── math/              # 数学可视化渲染器（29 个）
 │       ├── function-plot.js
 │       ├── limit-animation.js
 │       ├── matrix-transform.js
-│       └── ... (24 个)
+│       ├── formula-handbook.js     # 新增
+│       ├── flashcards.js           # 新增
+│       ├── error-analyzer.js       # 新增
+│       ├── interactive-proof.js    # 新增
+│       ├── concept-map.js          # 新增
+│       └── ... (29 个)
 │
 ├── services/               # 服务层
-│   ├── ai-client.js       # LLM API 客户端（SSE 流式）
-│   ├── stream-parser.js   # 流式响应解析器
-│   ├── math-evaluator.js  # 数学表达式求值（mathjs）
-│   └── storage-adapter.js # localStorage 适配器
+│   ├── ai-client.js        # LLM API 客户端（SSE 流式 + 图片识别 + 标题生成）
+│   ├── stream-parser.js    # 流式响应解析器
+│   ├── math-evaluator.js   # 数学表达式求值（mathjs）
+│   └── storage-adapter.js  # localStorage 适配器
 │
 ├── stores/                 # 状态管理层（发布-订阅）
 │   ├── chat-store.js       # 会话 & 消息状态
-│   ├── settings-store.js  # 设置状态
+│   ├── settings-store.js   # 设置状态（含 Prompt 分段存储）
 │   ├── tool-store.js       # 工具调用状态
+│   ├── learning-stats-store.js # 学习统计状态  ⬅ 新增
 │   └── store-base.js       # Store 基类
 │
 └── utils/                  # 工具函数
-    ├── dom.js             # DOM 操作辅助
-    ├── formatters.js      # 格式化
-    ├── helpers.js         # 通用辅助
-    └── id.js              # UUID 生成
+    ├── dom.js              # DOM 操作辅助
+    ├── formatters.js       # 格式化
+    ├── helpers.js          # 通用辅助
+    ├── id.js               # UUID 生成
+    └── latex.js            # LaTeX 渲染工具
 ```
 
-### 样式层
+### 样式层（14 个文件）
 
 ```
 css/
@@ -135,12 +160,16 @@ css/
 ├── chat.css                # 聊天区域
 ├── message.css             # 消息气泡 + 工具卡片 + 全屏模式
 ├── math-components.css     # 数学组件专用样式
-├── settings.css           # 设置弹窗
+├── math-symbol-keyboard.css # 数学符号键盘样式  ⬅ 新增
+├── settings.css            # 设置弹窗
 ├── modal.css               # 通用弹窗
-└── animations.css          # 动画与过渡
+├── animations.css          # 动画与过渡
+├── learning-stats.css      # 学习统计面板样式  ⬅ 新增
+├── favorites.css           # 收藏夹面板样式  ⬅ 新增
+└── context-menu.css        # 右键菜单样式  ⬅ 新增
 ```
 
-## 工具组件一览（24 个）
+## 工具组件一览（29 个）
 
 ### 微积分（12 个）
 
@@ -170,14 +199,14 @@ css/
 
 | 工具名 | 功能 | 渲染技术 |
 |--------|------|----------|
-| `plot_distribution` | 7 种概率分布的 PDF + CDF（正态、均匀、指数、Gamma、Beta、卡方、t） | Plotly |
+| `plot_distribution` | 7 种概率分布的 PDF + CDF | Plotly |
 | `animate_clt` | 中心极限定理抽样演示动画 | Plotly 直方图 |
 
 ### 级数与数列（2 个）
 
 | 工具名 | 功能 | 渲染技术 |
 |--------|------|----------|
-| `plot_fourier_series` | 傅里叶级数逼近波形（方波/锯齿波/三角波，可调项数） | Plotly |
+| `plot_fourier_series` | 傅里叶级数逼近波形（方波/锯齿波/三角波） | Plotly |
 | `plot_sequence` | 数列可视化（散点图、数轴标注、蛛网图） | Plotly |
 
 ### UI 辅助（6 个）
@@ -189,7 +218,42 @@ css/
 | `show_knowledge_tip` | 知识点提示（定义/定理/公式/注意） | DOM 卡片 |
 | `control_parameter_slider` | 参数滑块联动函数图像 | Plotly + 滑块 |
 | `show_comparison_table` | 结构化方法对比表（支持 LaTeX） | DOM 表格 |
-| `interactive_quiz` | 交互式选择题测验（即时反馈对错） | DOM 卡片 |
+| `interactive_quiz` | 交互式选择题测验（支持 5 种题型混合） | DOM 卡片 |
+
+### 学习辅助（5 个）⬅ 新增
+
+| 工具名 | 功能 | 渲染技术 |
+|--------|------|----------|
+| `show_formula_handbook` | 公式手册速查卡，按分类展示常用公式，支持搜索与折叠 | DOM 卡片 |
+| `show_flashcards` | 抽认卡工具，正反面翻转，支持间隔重复记忆 | DOM 卡片 |
+| `show_error_analyzer` | 易错点分析，展示常见错误写法与正确写法对比 | DOM 卡片 |
+| `show_interactive_proof` | 交互式证明展示，步骤可展开/折叠，适合定理推导 | DOM 卡片 |
+| `show_concept_map` | 知识概念图，展示知识点间依赖关系，支持点击查看详情 | DOM/SVG |
+
+## 新增功能（v1.1）
+
+### 收藏夹
+- 右键菜单收藏消息文本、工具卡片
+- AI 自动命名收藏条目，支持双击重命名
+- 侧边收藏面板快速访问
+
+### 学习统计
+- Token 用量统计（输入/输出）
+- 按数学分支分类统计工具使用次数
+- 学习轨迹可视化
+
+### System Prompt 分段编辑
+- 设置页将 Prompt 拆为 4 段：角色定义 / 可用工具列表 / 注意事项 / 其他补充
+- 每段独立展开编辑，实时预览合并后的完整 Prompt
+- 支持一键恢复默认
+
+### 数学符号键盘
+- 输入框旁弹出数学符号键盘
+- 一键插入希腊字母、微积分符号、矩阵符号等
+
+### 设置导入导出
+- 支持密码加密导出设置信息（`.enc` 文件）
+- 支持密文粘贴或文件上传导入设置
 
 ## 新增组件指南
 
@@ -201,7 +265,7 @@ css/
 4. **注册 Definition** — 在 `js/tools/register-all.js` 中注册执行器
 5. **注册 Renderer** — 在 `js/components/math/index.js` 中添加动态导入
 6. **更新映射** — 在 `js/config.js` 的 `TOOL_COMPONENT_MAP` 和 `TOOL_ICONS` 中添加映射
-7. **更新 Prompt** — 在 `js/config.js` 的 `systemPrompt` 中添加工具说明
+7. **更新 Prompt** — 在 `js/prompt.js` 的 `DEFAULT_TOOLS_LIST` 中添加工具说明
 
 不需要修改 `executor.js`、`ai-client.js`、`stream-parser.js` 等核心代码。
 
@@ -217,8 +281,10 @@ css/
 | Markdown | marked.js | AI 回复文本渲染 |
 | 代码高亮 | highlight.js | 代码块语法高亮 |
 | 状态管理 | 自研发布-订阅 Store | 轻量，无依赖 |
-| 持久化 | localStorage | 会话、设置本地存储 |
+| 持久化 | localStorage | 会话、设置、收藏、统计本地存储 |
 | API 通信 | 原生 fetch + SSE | LLM 流式输出 |
+
+> 所有依赖库存放于 `lib/` 目录，无需 CDN 网络加载，完全离线可用。
 
 ## 设计规范
 
@@ -230,7 +296,7 @@ css/
 
 ### 全屏模式
 
-- 每个工具卡片支持全屏展开
+- 每个工具卡片支持全屏展开（点击全屏按钮或双击卡片）
 - 全屏状态下图表/画布自动撑满可用空间
 - Canvas 组件通过 `ResizeObserver` 监听容器尺寸变化，全屏切换时自动重绘
 
@@ -247,8 +313,10 @@ css/
 |------|------|------|
 | `gaoshu_sessions` | 所有会话数据 | `Session[]` |
 | `gaoshu_active_session_id` | 当前会话 ID | `string` |
-| `gaoshu_settings` | 应用设置 | `AppSettings` |
+| `gaoshu_settings` | 应用设置（含 Prompt 分段） | `AppSettings` |
 | `gaoshu_theme` | 主题设置 | `string` |
+| `gaoshu_favorites` | 收藏数据 | `FavoriteItem[]` |
+| `gaoshu_learning_stats` | 学习统计数据 | `LearningStats` |
 
 自动清理策略：最多保留 100 条会话，单会话最多 500 条消息。
 
