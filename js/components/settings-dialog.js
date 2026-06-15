@@ -3,6 +3,8 @@
  */
 
 import { buildSystemPrompt, DEFAULT_PROMPT_PARTS } from '../prompt.js';
+// 注意：WebCryptoFallback 不是通过 ES Module 导入，而是通过 IIFE 直接挂到 window 全局
+// 这样可以避免 fallback 自身的语法检查问题（它是 IIFE 包起来的）
 
 /** @type {Object} settingsStore 引用 */
 let _settingsStore = null;
@@ -36,14 +38,41 @@ function arrayBufferToBase64(buffer) {
 
 /**
  * 将 Base64 字符串转为 ArrayBuffer
+ * 自动忽略空白/换行/回车等非 Base64 字符，容错处理
  */
 function base64ToArrayBuffer(base64) {
-  const binary = atob(base64);
+  // 去除 BOM、首尾空白和所有空白字符（换行、回车、制表、空格）
+  const cleaned = String(base64)
+    .replace(/^\uFEFF/, '')
+    .replace(/[\r\n\t\s]+/g, '');
+  const binary = atob(cleaned);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
   }
   return bytes.buffer;
+}
+
+/**
+ * 获取可用的 WebCrypto subtle 接口
+ * 优先级：原生 crypto.subtle > 纯 JS fallback（处理 file://、受限 webview 等情况）
+ */
+function getSubtle() {
+  if (typeof crypto !== 'undefined' && crypto && crypto.subtle) {
+    return crypto.subtle;
+  }
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+    return window.crypto.subtle;
+  }
+  // 回退到纯 JS 实现（性能较差但功能完全兼容）
+  if (
+    typeof window !== 'undefined' &&
+    window.WebCryptoFallback &&
+    window.WebCryptoFallback.subtle
+  ) {
+    return window.WebCryptoFallback.subtle;
+  }
+  return null;
 }
 
 /**
@@ -53,11 +82,18 @@ function base64ToArrayBuffer(base64) {
  * @returns {Promise<CryptoKey>}
  */
 async function deriveKey(password, salt) {
+  const subtle = getSubtle();
+  if (!subtle) {
+    throw new Error(
+      '当前环境不支持 WebCrypto API（crypto.subtle 不可用），且未加载纯 JS 兜底实现。' +
+      '请使用 HTTPS 协议访问页面，或在 localhost 下打开，并避免被浏览器扩展/中间脚本拦截 crypto 对象。'
+    );
+  }
   const enc = new TextEncoder();
-  const keyMaterial = await crypto.subtle.importKey(
+  const keyMaterial = await subtle.importKey(
     'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
   );
-  return crypto.subtle.deriveKey(
+  return subtle.deriveKey(
     { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
     keyMaterial,
     { name: ENC_ALGO, length: KEY_LENGTH },
@@ -74,13 +110,21 @@ async function deriveKey(password, salt) {
  * @returns {Promise<string>} Base64 编码的密文
  */
 async function encryptData(data, password) {
+  // 加密时也要确保 crypto.subtle 可用（deriveKey 内部会再次检查）
+  if (!getSubtle()) {
+    throw new Error(
+      '当前环境不支持 WebCrypto API（crypto.subtle 不可用）。' +
+      '请使用 HTTPS 协议访问页面，或在 localhost 下打开，并避免被浏览器扩展/中间脚本拦截 crypto 对象。'
+    );
+  }
   const enc = new TextEncoder();
   const plaintext = enc.encode(JSON.stringify(data));
 
   const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
   const key = await deriveKey(password, salt);
-  const ciphertext = await crypto.subtle.encrypt({ name: ENC_ALGO, iv }, key, plaintext);
+  const subtle = getSubtle();
+  const ciphertext = await subtle.encrypt({ name: ENC_ALGO, iv }, key, plaintext);
 
   // 拼接: salt + iv + ciphertext
   const combined = new Uint8Array(SALT_LENGTH + IV_LENGTH + ciphertext.byteLength);
@@ -98,10 +142,24 @@ async function encryptData(data, password) {
  * @returns {Promise<Object>}
  */
 async function decryptData(ciphertextBase64, password) {
-  const combined = new Uint8Array(base64ToArrayBuffer(ciphertextBase64));
+  // 预处理：去除 BOM / 空白 / 换行
+  const cleanedBase64 = String(ciphertextBase64 ?? '')
+    .replace(/^\uFEFF/, '')
+    .replace(/[\r\n\t\s]+/g, '');
+
+  if (!cleanedBase64) {
+    throw new Error('密文为空');
+  }
+
+  let combined;
+  try {
+    combined = new Uint8Array(base64ToArrayBuffer(cleanedBase64));
+  } catch (e) {
+    throw new Error('密文不是有效的 Base64 编码：' + e.message);
+  }
 
   if (combined.length < SALT_LENGTH + IV_LENGTH + 1) {
-    throw new Error('密文格式无效或已损坏');
+    throw new Error('密文格式无效或已损坏（长度不足）');
   }
 
   const salt = combined.slice(0, SALT_LENGTH);
@@ -109,10 +167,32 @@ async function decryptData(ciphertextBase64, password) {
   const ciphertext = combined.slice(SALT_LENGTH + IV_LENGTH);
 
   const key = await deriveKey(password, salt);
-  const plaintext = await crypto.subtle.decrypt({ name: ENC_ALGO, iv }, key, ciphertext);
+
+  let plaintext;
+  try {
+    const subtle = getSubtle();
+    if (!subtle) {
+      throw new Error(
+        '当前环境不支持 WebCrypto API（crypto.subtle 不可用）。' +
+        '请使用 HTTPS 协议访问页面，或在 localhost 下打开，并避免被浏览器扩展/中间脚本拦截 crypto 对象。'
+      );
+    }
+    plaintext = await subtle.decrypt({ name: ENC_ALGO, iv }, key, ciphertext);
+  } catch (e) {
+    // 如果是已经格式化过的 \"当前环境不支持\" 错误，直接抛出
+    if (e.message && e.message.includes('WebCrypto API')) {
+      throw e;
+    }
+    // AES-GCM 认证失败：密码错误 或 密文被篡改
+    throw new Error('解密失败：密码错误或密文已被篡改');
+  }
 
   const dec = new TextDecoder();
-  return JSON.parse(dec.decode(plaintext));
+  try {
+    return JSON.parse(dec.decode(plaintext));
+  } catch (e) {
+    throw new Error('解密成功但 JSON 解析失败：' + e.message);
+  }
 }
 
 // 文件下载 / 上传
@@ -351,12 +431,17 @@ export function initSettingsDialog(settingsStore, chatStore) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      document.getElementById('import-ciphertext').value = reader.result;
+      // 去除可能存在的 BOM
+      let content = String(reader.result ?? '');
+      if (content.charCodeAt(0) === 0xFEFF) {
+        content = content.slice(1);
+      }
+      document.getElementById('import-ciphertext').value = content;
     };
     reader.onerror = () => {
       alert('文件读取失败，请重试。');
     };
-    reader.readAsText(file);
+    reader.readAsText(file, 'utf-8');
   });
 
   document.getElementById('import-cancel-btn').addEventListener('click', () => {
@@ -393,7 +478,13 @@ export function initSettingsDialog(settingsStore, chatStore) {
       alert('设置导入成功！');
     } catch (err) {
       console.error('导入解密失败:', err);
-      if (err.message.includes('JSON') || err.message.includes('格式')) {
+      // 优先显示 decryptData 抛出的具体错误（包含 "密文"、"解密"、"JSON"、"格式" 等关键字）
+      if (
+        err.message.includes('密文') ||
+        err.message.includes('解密') ||
+        err.message.includes('JSON') ||
+        err.message.includes('格式')
+      ) {
         alert('导入失败：' + err.message);
       } else {
         alert('导入失败：密码错误或密文已损坏。');

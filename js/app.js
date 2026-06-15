@@ -17,6 +17,8 @@ import { initLearningStatsPanel } from './components/learning-stats-panel.js';
 import { initFavoritesPanel } from './components/favorites-panel.js';
 import { initContextMenu } from './components/context-menu.js';
 import { learningStatsStore } from './stores/learning-stats-store.js';
+// 早期加载 WebCrypto 纯 JS 兜底（用于 file:// 协议等 crypto.subtle 不可用的情况）
+import './utils/webcrypto-fallback.js';
 
 // ===== 注册所有工具 =====
 registerAllTools();
