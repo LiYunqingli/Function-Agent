@@ -961,7 +961,7 @@ export const toolSchemas = [
                 severity: {
                   type: 'string',
                   enum: ['critical', 'warning', 'info'],
-                  description: '严重程度：critical=严重, warning=警告, info=提酗',
+                  description: '严重程度：critical=严重, warning=警告, info=提示',
                 },
               },
               required: ['wrongExpression', 'correctExpression'],
