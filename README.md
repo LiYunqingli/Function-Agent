@@ -4,7 +4,7 @@
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Tools](https://img.shields.io/badge/LLM_Tools-29-orange.svg)
-![Version](https://img.shields.io/badge/version-1.1-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2-blue.svg)
 
 ## 产品定位
 
@@ -17,6 +17,13 @@ Function-Agent 面向高校学生，覆盖 **微积分、线性代数、概率�
 - 用户自带 API Key，零部署、零运维
 - 所有依赖库本地加载（`lib/` 目录），无需 CDN，完全离线可用
 - 收藏夹、学习统计、右键菜单、数学符号键盘等辅助功能
+
+## 📚 文档
+
+- **项目文档**：[file/README.md](file/README.md) — 完整的技术文档、开发指南和用户使用手册
+- **系统架构**：[file/docs/系统架构.md](file/docs/系统架构.md) — 整体架构与技术栈详解
+- **开发指南**：[file/guides/开发指南.md](file/guides/开发指南.md) — 环境搭建与开发规范
+- **组件开发**：[file/guides/组件开发规范.md](file/guides/组件开发规范.md) — 29 个数学可视化组件开发模板
 
 ## 快速开始
 
